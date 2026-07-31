@@ -4,7 +4,6 @@ import SwiftUI
 /// First column: All Posts / Published / Drafts, globally and per account.
 struct AccountsSidebarView: View {
   @Environment(AppModel.self) private var model
-  @State private var expandedAccountIDs: Set<UUID> = []
   #if os(iOS)
     @State private var showsSettings = false
   #endif
@@ -17,7 +16,7 @@ struct AccountsSidebarView: View {
       }
       Section("Accounts") {
         ForEach(model.accounts) { account in
-          DisclosureGroup(isExpanded: isExpanded(account)) {
+          DisclosureGroup {
             statusRows(accountID: account.id)
           } label: {
             Label {
@@ -25,13 +24,7 @@ struct AccountsSidebarView: View {
             } icon: {
               NetworkIconView(network: account.network)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-            .onTapGesture {
-              withAnimation {
-                isExpanded(account).wrappedValue.toggle()
-              }
-            }
+            .tag(AppModel.SidebarSelection(accountID: account.id, isAccountRow: true))
           }
         }
       }
@@ -60,19 +53,6 @@ struct AccountsSidebarView: View {
         SettingsRootView()
       }
     #endif
-  }
-
-  private func isExpanded(_ account: Account) -> Binding<Bool> {
-    Binding(
-      get: { expandedAccountIDs.contains(account.id) },
-      set: { expanded in
-        if expanded {
-          expandedAccountIDs.insert(account.id)
-        } else {
-          expandedAccountIDs.remove(account.id)
-        }
-      }
-    )
   }
 
   @ViewBuilder

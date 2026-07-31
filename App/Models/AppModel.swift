@@ -10,6 +10,9 @@ import OutboxKit
   /// Both nil means "All Posts".
   struct SidebarSelection: Hashable {
     var accountID: UUID?
+    /// Distinguishes the account's own row from its "All Posts" child, so both
+    /// are selectable — they filter identically.
+    var isAccountRow = false
     var status: StoredPost.Status?
   }
 
