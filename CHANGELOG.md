@@ -37,3 +37,6 @@ All notable changes to Outbox are documented here.
   (resolved via Mastodon search / atproto getRecord with thread-root
   propagation); a Reply button on published posts prefills it.
 - Add `in_reply_to` and `composition` frontmatter fields.
+- Move accounts and archive-folder settings into a proper Settings window
+  (⌘, on macOS, General + Accounts tabs); account removal now asks for
+  confirmation and explains that archived files stay on disk.
