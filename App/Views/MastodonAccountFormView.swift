@@ -2,57 +2,42 @@ import AuthenticationServices
 import OutboxKit
 import SwiftUI
 
-/// Connects a Mastodon account: instance domain → OAuth in a web sheet → token in Keychain.
-struct AddMastodonAccountView: View {
+/// Inline Mastodon connect form: instance domain → OAuth in a web sheet → token in Keychain.
+struct MastodonAccountFormView: View {
   @Environment(AppModel.self) private var model
-  @Environment(\.dismiss) private var dismiss
   @Environment(\.webAuthenticationSession) private var webAuthenticationSession
   @State private var domain = ""
   @State private var errorMessage: String?
   @State private var isWorking = false
 
   var body: some View {
-    NavigationStack {
-      Form {
-        Section {
-          TextField("Instance domain", text: $domain, prompt: Text("ruby.social"))
-            .textContentType(.URL)
-            #if os(iOS)
-              .keyboardType(.URL)
-              .textInputAutocapitalization(.never)
-              .autocorrectionDisabled()
-            #endif
-        } footer: {
-          Text("You'll sign in on your instance's own website. Outbox never sees your password.")
-        }
+    TextField("Instance domain", text: $domain, prompt: Text("ruby.social"))
+      .textContentType(.URL)
+      #if os(iOS)
+        .keyboardType(.URL)
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+      #endif
 
-        if let errorMessage {
-          Text(errorMessage)
-            .foregroundStyle(.red)
-        }
-
-        Button {
-          Task { await connect() }
-        } label: {
-          if isWorking {
-            ProgressView()
-          } else {
-            Text("Connect")
-          }
-        }
-        .disabled(domain.isEmpty || isWorking)
-      }
-      .textSelection(.enabled)
-      .navigationTitle("Add Mastodon")
-      .toolbar {
-        ToolbarItem(placement: .cancellationAction) {
-          Button("Cancel") { dismiss() }
-        }
-      }
+    if let errorMessage {
+      Text(errorMessage)
+        .foregroundStyle(.red)
     }
-    #if os(macOS)
-      .frame(minWidth: 420, minHeight: 260)
-    #endif
+
+    HStack {
+      Text("You'll sign in on your instance's own website. Outbox never sees your password.")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      Spacer()
+      if isWorking {
+        ProgressView()
+          .controlSize(.small)
+      }
+      Button("Connect") {
+        Task { await connect() }
+      }
+      .disabled(domain.isEmpty || isWorking)
+    }
   }
 
   private func connect() async {
@@ -100,7 +85,7 @@ struct AddMastodonAccountView: View {
         serverURL: serverURL
       )
       try model.add(account, credential: .accessToken(token))
-      dismiss()
+      domain = ""
     } catch {
       errorMessage = error.localizedDescription
     }

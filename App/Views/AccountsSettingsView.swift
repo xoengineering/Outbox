@@ -1,10 +1,11 @@
 import OutboxKit
 import SwiftUI
 
-/// Account management inside Settings: connected accounts, add, and remove.
+/// Account management inside Settings: connected accounts, plus an inline
+/// add-account form — pick a network, the form below changes to match.
 struct AccountsSettingsView: View {
   @Environment(AppModel.self) private var model
-  @State private var addingNetwork: Network?
+  @State private var newNetwork: Network = .bluesky
   @State private var removingAccount: Account?
 
   var body: some View {
@@ -38,22 +39,26 @@ struct AccountsSettingsView: View {
         Text("Removing an account deletes its credential from your Keychain. Archived post files stay on disk.")
       }
 
-      Section {
-        Menu("Add Account…") {
-          Button("Bluesky") { addingNetwork = .bluesky }
-          Button("Mastodon") { addingNetwork = .mastodon }
-          Button("Threads (saves locally only)") { addingNetwork = .threads }
+      Section("Add Account") {
+        Picker("Network", selection: $newNetwork) {
+          ForEach(Network.allCases) { network in
+            Text(network.displayName).tag(network)
+          }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+
+        switch newNetwork {
+        case .bluesky:
+          BlueskyAccountFormView()
+        case .mastodon:
+          MastodonAccountFormView()
+        case .threads:
+          ThreadsAccountFormView()
         }
       }
     }
     .formStyle(.grouped)
-    .sheet(item: $addingNetwork) { network in
-      switch network {
-      case .bluesky: AddBlueskyAccountView()
-      case .mastodon: AddMastodonAccountView()
-      case .threads: AddThreadsAccountView()
-      }
-    }
     .confirmationDialog(
       "Remove \(removingAccount?.handle ?? "this account")?",
       isPresented: Binding(
