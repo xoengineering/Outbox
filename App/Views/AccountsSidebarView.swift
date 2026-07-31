@@ -68,7 +68,7 @@ struct AccountsSidebarView: View {
     let selection = accountRowSelection(for: account)
     return HStack(spacing: 6) {
       Button {
-        withAnimation {
+        withAnimation(.smooth(duration: 0.3)) {
           if !expandedAccountIDs.insert(account.id).inserted {
             expandedAccountIDs.remove(account.id)
           }
