@@ -29,19 +29,21 @@ struct PostsListView: View {
     }
     .navigationTitle(model.selectedAccountLabel)
     .safeAreaInset(edge: .top, spacing: 0) {
-      HStack(spacing: 6) {
-        allPill
-        statusPill("Drafts", status: .draft, color: .orange)
-        statusPill("Published", status: .published, color: .green)
-        Divider()
-          .frame(height: 14)
-        ForEach(Network.allCases) { network in
-          networkPill(network)
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 6) {
+          allPill
+          statusPill("Drafts", status: .draft, color: .orange)
+          statusPill("Published", status: .published, color: .green)
+          Divider()
+            .frame(height: 14)
+          ForEach(Network.allCases) { network in
+            networkPill(network)
+          }
         }
-        Spacer()
+        .fixedSize(horizontal: true, vertical: false)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
       }
-      .padding(.horizontal, 10)
-      .padding(.vertical, 6)
     }
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
