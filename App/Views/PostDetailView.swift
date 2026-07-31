@@ -81,16 +81,22 @@ struct PostDetailView: View {
     VStack(alignment: .leading, spacing: 6) {
       if let remoteURL = post.file.metadata.remoteURL {
         Label {
-          Link(remoteURL.absoluteString, destination: remoteURL)
-            .multilineTextAlignment(.leading)
+          Link(destination: remoteURL) {
+            Text(remoteURL.absoluteString)
+              .multilineTextAlignment(.leading)
+              .frame(maxWidth: .infinity, alignment: .leading)
+          }
         } icon: {
           Image(systemName: "link")
         }
       }
       if let inReplyTo = post.file.metadata.inReplyTo {
         Label {
-          Link("In reply to \(inReplyTo.absoluteString)", destination: inReplyTo)
-            .multilineTextAlignment(.leading)
+          Link(destination: inReplyTo) {
+            Text("In reply to \(inReplyTo.absoluteString)")
+              .multilineTextAlignment(.leading)
+              .frame(maxWidth: .infinity, alignment: .leading)
+          }
         } icon: {
           Image(systemName: "arrowshape.turn.up.left")
         }
