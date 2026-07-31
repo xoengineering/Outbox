@@ -23,7 +23,7 @@ import Testing
     let adapter = BlueskyAdapter(now: { Date.iso8601("2026-09-18T17:32:05Z") }, transport: transport)
 
     let outcome = try await adapter.publish(
-      body: "Happy bday to me. 🎂",
+      OutgoingPost(body: "Happy bday to me. 🎂"),
       account: account,
       credential: credential
     )
@@ -60,7 +60,7 @@ import Testing
     let adapter = BlueskyAdapter(now: { Date.iso8601("2026-09-18T17:32:05Z") }, transport: transport)
 
     _ = try await adapter.publish(
-      body: "🎂 https://example.com yay",
+      OutgoingPost(body: "🎂 https://example.com yay"),
       account: account,
       credential: credential
     )
@@ -72,6 +72,27 @@ import Testing
     #expect(index?["byteEnd"] as? Int == 24)
     let features = facets?.first?["features"] as? [[String: Any]]
     #expect(features?.first?["uri"] as? String == "https://example.com")
+  }
+
+  @Test func sendsReplyRefsWhenReplying() async throws {
+    let transport = FixtureTransport(stubs: [
+      .init(fixtureName: "bluesky-create-session.json", statusCode: 200),
+      .init(fixtureName: "bluesky-create-record.json", statusCode: 200),
+    ])
+    let adapter = BlueskyAdapter(now: { Date.iso8601("2026-09-18T17:32:05Z") }, transport: transport)
+    let parent = RecordRef(cid: "parentcid", uri: "at://did:plc:x/app.bsky.feed.post/3parent")
+    let root = RecordRef(cid: "rootcid", uri: "at://did:plc:x/app.bsky.feed.post/3root")
+
+    _ = try await adapter.publish(
+      OutgoingPost(body: "Replying!", replyTo: .bluesky(parent: parent, root: root)),
+      account: account,
+      credential: credential
+    )
+
+    let record = try transport.requestBodyJSON(at: 1)["record"] as? [String: Any]
+    let reply = record?["reply"] as? [String: Any]
+    #expect((reply?["parent"] as? [String: Any])?["uri"] as? String == parent.uri)
+    #expect((reply?["root"] as? [String: Any])?["cid"] as? String == root.cid)
   }
 
   @Test func verifiesAppPasswordAndReturnsHandle() async throws {
@@ -87,7 +108,7 @@ import Testing
     let adapter = BlueskyAdapter(transport: FixtureTransport(stubs: []))
 
     await #expect(throws: AdapterError.missingCredential) {
-      try await adapter.publish(body: "hi", account: account, credential: .accessToken("nope"))
+      try await adapter.publish(OutgoingPost(body: "hi"), account: account, credential: .accessToken("nope"))
     }
   }
 }

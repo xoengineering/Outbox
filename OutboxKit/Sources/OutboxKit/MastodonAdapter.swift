@@ -10,14 +10,20 @@ public struct MastodonAdapter: SocialServiceAdapter {
 
   public var network: Network { .mastodon }
 
-  public func publish(body: String, account: Account, credential: Credential) async throws -> PublishOutcome {
+  public func publish(_ post: OutgoingPost, account: Account, credential: Credential) async throws -> PublishOutcome {
     guard case .accessToken(let token) = credential else { throw AdapterError.missingCredential }
+
+    var inReplyToID: String?
+    if let replyTo = post.replyTo {
+      guard case .mastodon(let statusID) = replyTo else { throw AdapterError.replyMismatch }
+      inReplyToID = statusID
+    }
 
     var request = URLRequest(url: account.serverURL.appending(path: "api/v1/statuses"))
     request.httpMethod = "POST"
     request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.httpBody = try JSONEncoder().encode(StatusRequest(status: body))
+    request.httpBody = try JSONEncoder().encode(StatusRequest(inReplyToID: inReplyToID, status: post.body))
 
     let (data, response) = try await transport.send(request)
     guard (200..<300).contains(response.statusCode) else {
@@ -37,7 +43,13 @@ public struct MastodonAdapter: SocialServiceAdapter {
   }
 
   private struct StatusRequest: Encodable {
+    var inReplyToID: String?
     var status: String
+
+    enum CodingKeys: String, CodingKey {
+      case inReplyToID = "in_reply_to_id"
+      case status
+    }
   }
 
   private struct StatusResponse: Decodable {

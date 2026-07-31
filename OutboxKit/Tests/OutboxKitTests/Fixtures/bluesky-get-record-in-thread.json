@@ -1,0 +1,19 @@
+{
+  "uri": "at://did:plc:someoneelse111222333/app.bsky.feed.post/3parent222",
+  "cid": "bafyreiparentcid2222222222222222222222222222222222222222",
+  "value": {
+    "$type": "app.bsky.feed.post",
+    "createdAt": "2026-07-30T18:05:00.000Z",
+    "text": "A mid-thread post.",
+    "reply": {
+      "root": {
+        "uri": "at://did:plc:someoneelse111222333/app.bsky.feed.post/3root000",
+        "cid": "bafyreirootcid00000000000000000000000000000000000000000"
+      },
+      "parent": {
+        "uri": "at://did:plc:someoneelse111222333/app.bsky.feed.post/3parent111",
+        "cid": "bafyreiparentcid1111111111111111111111111111111111111111"
+      }
+    }
+  }
+}

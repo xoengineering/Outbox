@@ -16,9 +16,15 @@ public struct BlueskyAdapter: SocialServiceAdapter {
 
   public var network: Network { .bluesky }
 
-  public func publish(body: String, account: Account, credential: Credential) async throws -> PublishOutcome {
+  public func publish(_ post: OutgoingPost, account: Account, credential: Credential) async throws -> PublishOutcome {
     guard case .appPassword(let identifier, let password) = credential else {
       throw AdapterError.missingCredential
+    }
+
+    var reply: ReplyRefs?
+    if let replyTo = post.replyTo {
+      guard case .bluesky(let parent, let root) = replyTo else { throw AdapterError.replyMismatch }
+      reply = ReplyRefs(parent: parent, root: root)
     }
 
     let session = try await createSession(
@@ -26,7 +32,12 @@ public struct BlueskyAdapter: SocialServiceAdapter {
       password: password,
       serverURL: account.serverURL
     )
-    let record = try await createRecord(body: body, session: session, serverURL: account.serverURL)
+    let record = try await createRecord(
+      body: post.body,
+      reply: reply,
+      session: session,
+      serverURL: account.serverURL
+    )
 
     let receipt = PublishReceipt(
       publishedAt: now(),
@@ -66,12 +77,14 @@ public struct BlueskyAdapter: SocialServiceAdapter {
 
   private func createRecord(
     body: String,
+    reply: ReplyRefs?,
     session: SessionResponse,
     serverURL: URL
   ) async throws -> RecordResponse {
     let record = PostRecord(
       createdAt: ISO8601.string(from: now()),
       facets: LinkFacets.detect(in: body),
+      reply: reply,
       text: body
     )
     let request = RecordRequest(record: record, repo: session.did)
@@ -125,15 +138,22 @@ public struct BlueskyAdapter: SocialServiceAdapter {
   private struct PostRecord: Encodable {
     var createdAt: String
     var facets: [LinkFacets.Facet]
+    var reply: ReplyRefs?
     var text: String
     var type = "app.bsky.feed.post"
 
     enum CodingKeys: String, CodingKey {
       case createdAt
       case facets
+      case reply
       case text
       case type = "$type"
     }
+  }
+
+  struct ReplyRefs: Encodable, Equatable {
+    var parent: RecordRef
+    var root: RecordRef
   }
 
   private struct RecordResponse: Decodable {

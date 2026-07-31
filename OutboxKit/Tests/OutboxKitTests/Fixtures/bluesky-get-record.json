@@ -1,0 +1,9 @@
+{
+  "uri": "at://did:plc:someoneelse111222333/app.bsky.feed.post/3parent111",
+  "cid": "bafyreiparentcid1111111111111111111111111111111111111111",
+  "value": {
+    "$type": "app.bsky.feed.post",
+    "createdAt": "2026-07-30T18:00:00.000Z",
+    "text": "Original post being replied to."
+  }
+}

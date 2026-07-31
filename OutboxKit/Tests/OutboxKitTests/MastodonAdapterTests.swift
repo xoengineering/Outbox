@@ -15,7 +15,7 @@ import Testing
     let adapter = MastodonAdapter(transport: transport)
 
     let outcome = try await adapter.publish(
-      body: "Happy bday to me. 🎂",
+      OutgoingPost(body: "Happy bday to me. 🎂"),
       account: account,
       credential: .accessToken("token-123")
     )
@@ -35,12 +35,39 @@ import Testing
     #expect(body["status"] as? String == "Happy bday to me. 🎂")
   }
 
+  @Test func sendsInReplyToIDWhenReplying() async throws {
+    let transport = FixtureTransport(fixtureName: "mastodon-status-created.json")
+    let adapter = MastodonAdapter(transport: transport)
+
+    _ = try await adapter.publish(
+      OutgoingPost(body: "Replying!", replyTo: .mastodon(statusID: "115000000000000001")),
+      account: account,
+      credential: .accessToken("token-123")
+    )
+
+    let body = try transport.requestBodyJSON(at: 0)
+    #expect(body["in_reply_to_id"] as? String == "115000000000000001")
+  }
+
+  @Test func rejectsReplyFromAnotherNetwork() async throws {
+    let adapter = MastodonAdapter(transport: FixtureTransport(stubs: []))
+    let ref = RecordRef(cid: "cid", uri: "at://did/app.bsky.feed.post/rkey")
+
+    await #expect(throws: AdapterError.replyMismatch) {
+      try await adapter.publish(
+        OutgoingPost(body: "hi", replyTo: .bluesky(parent: ref, root: ref)),
+        account: account,
+        credential: .accessToken("token")
+      )
+    }
+  }
+
   @Test func throwsOnHTTPError() async throws {
     let transport = FixtureTransport(fixtureName: "mastodon-error-unauthorized.json", statusCode: 401)
     let adapter = MastodonAdapter(transport: transport)
 
     await #expect(throws: AdapterError.self) {
-      try await adapter.publish(body: "hi", account: account, credential: .accessToken("bad"))
+      try await adapter.publish(OutgoingPost(body: "hi"), account: account, credential: .accessToken("bad"))
     }
   }
 
@@ -48,7 +75,7 @@ import Testing
     let adapter = MastodonAdapter(transport: FixtureTransport(stubs: []))
 
     await #expect(throws: AdapterError.missingCredential) {
-      try await adapter.publish(body: "hi", account: account, credential: .none)
+      try await adapter.publish(OutgoingPost(body: "hi"), account: account, credential: .none)
     }
   }
 }

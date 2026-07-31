@@ -11,7 +11,7 @@ import Testing
       serverURL: URL(string: "https://www.threads.net")!
     )
 
-    let outcome = try await ThreadsAdapter().publish(body: "hi", account: account, credential: .none)
+    let outcome = try await ThreadsAdapter().publish(OutgoingPost(body: "hi"), account: account, credential: .none)
 
     guard case .skipped = outcome else {
       Issue.record("Expected .skipped, got \(outcome)")

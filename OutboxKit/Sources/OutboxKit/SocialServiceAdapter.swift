@@ -4,7 +4,35 @@ import Foundation
 public protocol SocialServiceAdapter: Sendable {
   var network: Network { get }
 
-  func publish(body: String, account: Account, credential: Credential) async throws -> PublishOutcome
+  func publish(_ post: OutgoingPost, account: Account, credential: Credential) async throws -> PublishOutcome
+}
+
+/// What gets sent to a network: the text, plus a resolved reply reference when threading.
+public struct OutgoingPost: Equatable, Sendable {
+  public var body: String
+  public var replyTo: ResolvedReply?
+
+  public init(body: String, replyTo: ResolvedReply? = nil) {
+    self.body = body
+    self.replyTo = replyTo
+  }
+}
+
+/// A reply target in the form each network's API needs.
+public enum ResolvedReply: Equatable, Sendable {
+  case bluesky(parent: RecordRef, root: RecordRef)
+  case mastodon(statusID: String)
+}
+
+/// An atproto strong record reference.
+public struct RecordRef: Codable, Equatable, Sendable {
+  public var cid: String
+  public var uri: String
+
+  public init(cid: String, uri: String) {
+    self.cid = cid
+    self.uri = uri
+  }
 }
 
 public struct PublishReceipt: Equatable, Sendable {
@@ -28,6 +56,8 @@ public enum AdapterError: Error, Equatable, LocalizedError {
   case httpError(statusCode: Int, message: String)
   case invalidResponse
   case missingCredential
+  case replyMismatch
+  case replyNotFound(String)
 
   public var errorDescription: String? {
     switch self {
@@ -37,6 +67,10 @@ public enum AdapterError: Error, Equatable, LocalizedError {
       "The server returned a response that couldn't be understood."
     case .missingCredential:
       "No stored credential for this account. Remove the account and add it again."
+    case .replyMismatch:
+      "The reply reference doesn't belong to this network."
+    case .replyNotFound(let detail):
+      "Couldn't resolve the post being replied to: \(detail)"
     }
   }
 }
