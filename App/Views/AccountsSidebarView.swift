@@ -48,6 +48,9 @@ struct AccountsSidebarView: View {
       .focusable()
       .focusEffectDisabled()
       .focused($isFocused)
+      .onKeyPress { press in
+        press.key == "d" && press.modifiers.contains(.control) ? .handled : .ignored
+      }
       .onChange(of: isFocused) {
         if isFocused { lastFocusedColumn = "accounts" }
       }

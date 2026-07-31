@@ -13,6 +13,11 @@ struct PostsListView: View {
       PostRowView(post: post)
     }
     .focused($isFocused)
+    // macOS routes ⌃D (the text system's deleteForward:) into the list, where it
+    // strangely moves selection. Swallow it; text views keep their native ⌃D.
+    .onKeyPress { press in
+      press.key == "d" && press.modifiers.contains(.control) ? .handled : .ignored
+    }
     #if os(macOS)
       .focusSection()
     #endif
