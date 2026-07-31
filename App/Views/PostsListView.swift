@@ -28,13 +28,16 @@ struct PostsListView: View {
       if lastFocusedColumn == "posts" { isFocused = true }
     }
     .navigationTitle(model.selectedAccountLabel)
-    .toolbar {
-      ToolbarItemGroup {
-        Toggle("Drafts", systemImage: "doc.text", isOn: statusFilter(.draft))
-          .help("Show only drafts")
-        Toggle("Published", systemImage: "paperplane", isOn: statusFilter(.published))
-          .help("Show only published posts")
+    .safeAreaInset(edge: .top, spacing: 0) {
+      HStack(spacing: 6) {
+        statusPill("Drafts", status: .draft, color: .orange)
+        statusPill("Published", status: .published, color: .green)
+        Spacer()
       }
+      .padding(.horizontal, 10)
+      .padding(.vertical, 6)
+    }
+    .toolbar {
       ToolbarItem(placement: .primaryAction) {
         Button("New Post", systemImage: "square.and.pencil") {
           model.startNewPost()
@@ -45,7 +48,6 @@ struct PostsListView: View {
     .onChange(of: model.selectedPostID) {
       model.detailMode = .browse
     }
-    .toggleStyle(.button)
     .overlay {
       if model.visiblePosts.isEmpty {
         ContentUnavailableView(
@@ -57,16 +59,24 @@ struct PostsListView: View {
     }
   }
 
-  private func statusFilter(_ status: StoredPost.Status) -> Binding<Bool> {
-    Binding(
-      get: { model.statusFilters.contains(status) },
-      set: { isOn in
-        if isOn {
-          model.statusFilters.insert(status)
-        } else {
-          model.statusFilters.remove(status)
-        }
+  /// A filter pill styled like the Draft badge on post rows.
+  private func statusPill(_ title: String, status: StoredPost.Status, color: Color) -> some View {
+    let isOn = model.statusFilters.contains(status)
+    return Button {
+      if isOn {
+        model.statusFilters.remove(status)
+      } else {
+        model.statusFilters.insert(status)
       }
-    )
+    } label: {
+      Text(title)
+        .font(.caption2.weight(.semibold))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(isOn ? AnyShapeStyle(color.opacity(0.2)) : AnyShapeStyle(.quaternary), in: Capsule())
+        .foregroundStyle(isOn ? AnyShapeStyle(color) : AnyShapeStyle(.secondary))
+    }
+    .buttonStyle(.plain)
+    .help(status == .draft ? "Show only drafts" : "Show only published posts")
   }
 }
