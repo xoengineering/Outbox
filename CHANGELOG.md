@@ -28,3 +28,12 @@ All notable changes to Outbox are documented here.
 - Fix the publish results sheet rendering no rows; make its text selectable.
 - Give adapter errors readable descriptions (HTTP status + server message).
 - Keychain reads/deletes now check both the data-protection and login keychains.
+- Rebuild the app as a Mail-style three-column UI: accounts sidebar, searchable
+  posts list, and a detail column that shows a post (status, permalinks,
+  extracted hashtags/mentions/links) or hosts the new/edit form with a
+  danger-zone delete.
+- Add drafts: save without publishing, publish later in place.
+- Add replies: paste a Mastodon/Bluesky post URL to create a proper reply
+  (resolved via Mastodon search / atproto getRecord with thread-root
+  propagation); a Reply button on published posts prefills it.
+- Add `in_reply_to` and `composition` frontmatter fields.

@@ -39,6 +39,16 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
     params, which is harmless — but I haven't verified against a real old instance.
 11. **Xcode project via XcodeGen** (`project.yml` → `script/generate`), so the
     `.xcodeproj` is gitignored and regenerable.
+12. **"Private" status**: the spec mentioned private/published/draft. Files currently
+    derive draft vs published from `published_at`. Is "private" a visibility value
+    (Mastodon private posts) or a local-only "never publish" flag?
+13. **Editing published posts** edits the local file only (remote posts aren't
+    updated — Mastodon supports edits, Bluesky doesn't). The reply-URL field is
+    disabled when editing published posts.
+14. **Reply button targets that post's account only** and prefills its permalink.
+    Cross-network threaded follow-ups via `composition` siblings are Milestone 4.
+15. **iPhone/iPad UX**: the split view collapses on compact widths but compose-in-
+    third-column needs a dedicated push/sheet flow on iPhone. Mac-first for now.
 
 ---
 
@@ -69,6 +79,19 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
 - [ ] Publish flow: results sheet per endpoint (link to remote post + local file)
 - [ ] App sandbox ON, entitlements: network client, user-selected file read/write
 
+## Milestone 2.5 — Three-column app (done 2026-07-31)
+
+- [x] Mail.app-style NavigationSplitView: Accounts | Posts | Post
+- [x] Sidebar: All Posts + per-account filtering; search field on the posts list
+- [x] Post show view: status badge, permalinks, extracted #hashtags/@mentions/URLs
+- [x] Post form in third column (new + edit), danger-zone delete with confirmation
+- [x] Drafts: save without publishing, publish later in place
+- [x] Replies: paste a Mastodon/Bluesky post URL → proper reply
+      (Mastodon `/api/v2/search` resolve; Bluesky resolveHandle + getRecord,
+      thread root propagated). Reply button on published posts prefills it.
+- [x] `composition` frontmatter ID linking sibling files from one crosspost
+- [x] `in_reply_to` frontmatter field
+
 ## Milestone 3 — Robustness
 
 - [x] Mastodon: fetch instance config (`/api/v2/instance`) to learn real character
@@ -83,10 +106,18 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
 
 ## Milestone 4 — More content types
 
-- [ ] Images/media uploads (Mastodon `/api/v2/media`, Bluesky blob upload) + alt text
+- [ ] Media attachments with alt text (next up). Design:
+      - Attachment files copied into the post's day folder next to the `.md`
+        (`<slug>-<N>-1.jpg`), so the archive stays self-contained plaintext + assets
+      - Frontmatter: `media:` list of `{file, alt}` entries
+      - Mastodon: `POST /api/v2/media` (multipart) → `media_ids[]` on the status
+      - Bluesky: `com.atproto.repo.uploadBlob` → `app.bsky.embed.images` with alt
+      - Composer: attach via file picker, per-image alt text fields, previews
+      - Limits per network (Mastodon 4 images; Bluesky 4 images ≤1MB — verify)
 - [ ] Content warnings / spoiler text (Mastodon), labels (Bluesky)
-- [ ] Reply-to / threading chains
-- [ ] Frontmatter grows: `media`, `alt`, `cw`, `in_reply_to`
+- [ ] Cross-network thread follow-ups: use `composition` to find sibling files and
+      reply per-network to each sibling automatically
+- [ ] Quote posts
 
 ## Milestone 5 — More networks
 
