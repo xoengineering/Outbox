@@ -26,7 +26,7 @@ struct SettingsRootView: View {
           AccountsSettingsView()
         }
       }
-      .frame(width: 480, height: selectedTab == .general ? 220 : 560)
+      .frame(width: 600, height: selectedTab == .general ? 220 : 560)
     #else
       NavigationStack {
         List {
