@@ -7,7 +7,7 @@ import Security
 public struct KeychainStore: Sendable {
   public var service: String
 
-  public init(service: String = "com.xoengineering.Outbox") {
+  public init(service: String = "engineering.xo.Outbox") {
     self.service = service
   }
 

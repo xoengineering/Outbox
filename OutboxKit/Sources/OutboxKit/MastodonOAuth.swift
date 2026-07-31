@@ -28,7 +28,7 @@ public struct MastodonOAuth: Sendable {
       "client_name": "Outbox",
       "redirect_uris": Self.redirectURI,
       "scopes": Self.scopes,
-      "website": "https://xoengineering.com",
+      "website": "https://xo.engineering",
     ]
     return try await postJSON(body, to: serverURL.appending(path: "api/v1/apps"))
   }

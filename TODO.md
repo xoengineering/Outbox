@@ -13,9 +13,8 @@ Minimums: macOS/iOS/iPadOS 26.5, Swift 6.3+, SwiftUI, Swift Testing.
 
 Decisions I made unilaterally to keep moving — flag anything you want changed.
 
-1. **Bundle ID / org**: used `com.xoengineering.Outbox` and `https://xoengineering.com`
-   as the app website in Mastodon app registration (prior art used
-   `com.somedarkenergy.Outbox`). Which org identity is right?
+1. **Bundle ID**: `engineering.xo.Outbox` (confirmed). The Mastodon app-registration
+   website is `https://xo.engineering` — inferred from the bundle ID; confirm the domain.
 2. **Bluesky auth**: v1 uses app passwords (Settings → App Passwords on Bluesky),
    stored in Keychain. This bends the "never ask username/password" rule — full
    atproto OAuth (PKCE + DPoP + PAR) is a heavy lift I deferred. Upgrade later?
