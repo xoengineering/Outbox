@@ -16,6 +16,9 @@ struct ContentView: View {
         .navigationSplitViewColumnWidth(min: 240, ideal: 320)
     } detail: {
       DetailColumnView()
+        #if os(macOS)
+          .frame(minWidth: 380)
+        #endif
     }
     .task {
       await model.reloadPosts()
