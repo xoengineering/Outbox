@@ -1,0 +1,9 @@
+included:
+  - App
+  - OutboxKit/Sources
+  - OutboxKit/Tests
+line_length: 125
+identifier_name:
+  min_length: 2
+disabled_rules:
+  - todo

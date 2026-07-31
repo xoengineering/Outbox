@@ -1,0 +1,100 @@
+import AuthenticationServices
+import OutboxKit
+import SwiftUI
+
+/// Connects a Mastodon account: instance domain → OAuth in a web sheet → token in Keychain.
+struct AddMastodonAccountView: View {
+  @Environment(AppModel.self) private var model
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.webAuthenticationSession) private var webAuthenticationSession
+  @State private var domain = ""
+  @State private var errorMessage: String?
+  @State private var isWorking = false
+
+  var body: some View {
+    NavigationStack {
+      Form {
+        Section {
+          TextField("Instance domain", text: $domain, prompt: Text("ruby.social"))
+            .textContentType(.URL)
+            #if os(iOS)
+              .keyboardType(.URL)
+              .textInputAutocapitalization(.never)
+              .autocorrectionDisabled()
+            #endif
+        } footer: {
+          Text("You'll sign in on your instance's own website. Outbox never sees your password.")
+        }
+
+        if let errorMessage {
+          Text(errorMessage)
+            .foregroundStyle(.red)
+        }
+
+        Button {
+          Task { await connect() }
+        } label: {
+          if isWorking {
+            ProgressView()
+          } else {
+            Text("Connect")
+          }
+        }
+        .disabled(domain.isEmpty || isWorking)
+      }
+      .navigationTitle("Add Mastodon")
+      .toolbar {
+        ToolbarItem(placement: .cancellationAction) {
+          Button("Cancel") { dismiss() }
+        }
+      }
+    }
+    #if os(macOS)
+      .frame(minWidth: 420, minHeight: 260)
+    #endif
+  }
+
+  private func connect() async {
+    isWorking = true
+    defer { isWorking = false }
+    errorMessage = nil
+
+    let cleanedDomain =
+      domain
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .replacingOccurrences(of: "https://", with: "")
+    guard let serverURL = URL(string: "https://\(cleanedDomain)") else {
+      errorMessage = "That doesn't look like a domain."
+      return
+    }
+
+    do {
+      let oauth = MastodonOAuth()
+      let registration = try await oauth.registerApp(on: serverURL)
+      let authorizationURL = oauth.authorizationURL(on: serverURL, clientID: registration.clientID)
+      let callback = try await webAuthenticationSession.authenticate(
+        using: authorizationURL,
+        callbackURLScheme: "outbox",
+        preferredBrowserSession: .shared
+      )
+
+      let queryItems = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems
+      guard let code = queryItems?.first(where: { $0.name == "code" })?.value else {
+        errorMessage = "The instance didn't return an authorization code."
+        return
+      }
+
+      let token = try await oauth.exchangeCode(code, on: serverURL, registration: registration)
+      let verified = try await oauth.verifyCredentials(on: serverURL, token: token)
+      let account = Account(
+        handle: "@\(verified.username)@\(cleanedDomain)",
+        network: .mastodon,
+        serverURL: serverURL
+      )
+      try model.add(account, credential: .accessToken(token))
+      dismiss()
+    } catch {
+      errorMessage = error.localizedDescription
+    }
+  }
+}
