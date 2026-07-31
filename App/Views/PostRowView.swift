@@ -7,10 +7,9 @@ struct PostRowView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 3) {
-      HStack {
-        Text(firstLine)
-          .font(.headline)
-          .lineLimit(1)
+      HStack(alignment: .top) {
+        Text(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
+          .lineLimit(2)
         Spacer()
         if post.status == .draft {
           Text("Draft")
@@ -21,10 +20,6 @@ struct PostRowView: View {
             .foregroundStyle(post.status.color)
         }
       }
-      Text(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-        .lineLimit(2)
       HStack(spacing: 4) {
         NetworkIconView(network: post.file.metadata.network, size: 10)
         Text(post.file.metadata.account)
@@ -36,9 +31,5 @@ struct PostRowView: View {
       .foregroundStyle(.tertiary)
     }
     .padding(.vertical, 3)
-  }
-
-  private var firstLine: String {
-    post.file.body.split(separator: "\n", omittingEmptySubsequences: true).first.map(String.init) ?? "Empty post"
   }
 }
