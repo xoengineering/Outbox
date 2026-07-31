@@ -47,6 +47,12 @@ public struct PostFile: Equatable, Sendable {
     lines.append("network: \(metadata.network.rawValue)")
     lines.append("account: \(quoted(metadata.account))")
     lines.append("created_at: \(iso8601(metadata.createdAt))")
+    if let compositionID = metadata.compositionID {
+      lines.append("composition: \(compositionID.uuidString)")
+    }
+    if let inReplyTo = metadata.inReplyTo {
+      lines.append("in_reply_to: \(inReplyTo.absoluteString)")
+    }
     if let publishedAt = metadata.publishedAt {
       lines.append("published_at: \(iso8601(publishedAt))")
     }
@@ -76,22 +82,22 @@ public struct PostFile: Equatable, Sendable {
       throw ParseError.missingField("created_at")
     }
 
-    var remoteURL: URL?
-    if let urlString = fields["url"] as? String {
-      guard let url = URL(string: urlString) else {
-        throw ParseError.invalidValue(field: "url")
-      }
-      remoteURL = url
-    }
-
     return PostMetadata(
       account: account,
+      compositionID: (fields["composition"] as? String).flatMap(UUID.init(uuidString:)),
       createdAt: createdAt,
+      inReplyTo: try url(from: fields["in_reply_to"], field: "in_reply_to"),
       network: network,
       publishedAt: date(from: fields["published_at"]),
       remoteID: (fields["id"]).map { "\($0)" },
-      remoteURL: remoteURL
+      remoteURL: try url(from: fields["url"], field: "url")
     )
+  }
+
+  private static func url(from value: Any?, field: String) throws -> URL? {
+    guard let string = value as? String else { return nil }
+    guard let url = URL(string: string) else { throw ParseError.invalidValue(field: field) }
+    return url
   }
 
   /// Yams resolves unquoted timestamps to `Date`; quoted ones arrive as `String`.

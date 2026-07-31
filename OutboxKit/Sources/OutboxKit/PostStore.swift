@@ -39,6 +39,31 @@ public struct PostStore: Sendable {
     try serialized.write(to: url, atomically: true, encoding: .utf8)
   }
 
+  /// Reads every parseable post in the archive, newest first.
+  /// Files that fail to parse are skipped, never destroyed.
+  public func allPosts() throws -> [StoredPost] {
+    guard FileManager.default.fileExists(atPath: baseDirectory.path) else { return [] }
+
+    let enumerator = FileManager.default.enumerator(
+      at: baseDirectory,
+      includingPropertiesForKeys: nil,
+      options: [.skipsHiddenFiles]
+    )
+    var posts: [StoredPost] = []
+    while let fileURL = enumerator?.nextObject() as? URL {
+      guard fileURL.pathExtension == "md" else { continue }
+      guard let text = try? String(contentsOf: fileURL, encoding: .utf8),
+        let file = try? PostFile.parse(text)
+      else { continue }
+      posts.append(StoredPost(file: file, fileURL: fileURL))
+    }
+    return posts.sorted { $0.file.metadata.createdAt > $1.file.metadata.createdAt }
+  }
+
+  public func delete(_ post: StoredPost) throws {
+    try FileManager.default.removeItem(at: post.fileURL)
+  }
+
   private func dayDirectory(for metadata: PostMetadata) -> URL {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = timeZone
