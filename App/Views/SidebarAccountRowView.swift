@@ -12,18 +12,18 @@ struct SidebarAccountRowView: View {
       VStack(alignment: .leading, spacing: 1) {
         Text(account.displayName ?? account.handle)
           .lineLimit(1)
-          .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+          .foregroundStyle(isSelected ? Palette.selectedContent : AnyShapeStyle(.primary))
         HStack(spacing: 4) {
           NetworkIconView(
             network: account.network,
             size: 10,
-            tint: isSelected ? AnyShapeStyle(.white) : nil
+            tint: isSelected ? Palette.selectedContent : nil
           )
           Text(account.handle)
             .lineLimit(1)
         }
         .font(.caption)
-        .foregroundStyle(isSelected ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(.secondary))
+        .foregroundStyle(isSelected ? Palette.selectedSecondaryContent : AnyShapeStyle(.secondary))
       }
     }
     .padding(.vertical, 2)

@@ -49,11 +49,11 @@ struct PublishResultsView: View {
   private func icon(for result: Publisher.TargetResult) -> some View {
     switch result.outcome {
     case .success(.published):
-      Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+      Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.success)
     case .success(.skipped):
       Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
     case .failure:
-      Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+      Image(systemName: "xmark.circle.fill").foregroundStyle(Palette.danger)
     }
   }
 
@@ -72,7 +72,7 @@ struct PublishResultsView: View {
     case .failure(let error):
       Text(error.localizedDescription)
         .font(.callout)
-        .foregroundStyle(.red)
+        .foregroundStyle(Palette.danger)
     }
   }
 }

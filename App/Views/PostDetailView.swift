@@ -68,12 +68,8 @@ struct PostDetailView: View {
       .font(.caption.weight(.semibold))
       .padding(.horizontal, 8)
       .padding(.vertical, 3)
-      .background(badgeColor.opacity(0.15), in: Capsule())
-      .foregroundStyle(badgeColor)
-  }
-
-  private var badgeColor: Color {
-    post.status == .published ? .green : .orange
+      .background(post.status.color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
+      .foregroundStyle(post.status.color)
   }
 
   @ViewBuilder
@@ -112,10 +108,10 @@ struct PostDetailView: View {
       Divider()
       VStack(alignment: .leading, spacing: 10) {
         if !extracted.hashtags.isEmpty {
-          tokenRow(title: "Hashtags", tokens: extracted.hashtags, color: .blue)
+          tokenRow(title: "Hashtags", tokens: extracted.hashtags, color: Palette.hashtag)
         }
         if !extracted.mentions.isEmpty {
-          tokenRow(title: "Mentions", tokens: extracted.mentions, color: .purple)
+          tokenRow(title: "Mentions", tokens: extracted.mentions, color: Palette.mention)
         }
         if !extracted.urls.isEmpty {
           VStack(alignment: .leading, spacing: 4) {
@@ -145,7 +141,7 @@ struct PostDetailView: View {
               .font(.callout)
               .padding(.horizontal, 8)
               .padding(.vertical, 3)
-              .background(color.opacity(0.12), in: Capsule())
+              .background(color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
               .foregroundStyle(color)
           }
         }

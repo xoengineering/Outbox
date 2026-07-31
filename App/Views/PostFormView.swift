@@ -50,7 +50,7 @@ struct PostFormView: View {
 
       if let errorMessage {
         Text(errorMessage)
-          .foregroundStyle(.red)
+          .foregroundStyle(Palette.danger)
           .textSelection(.enabled)
       }
 

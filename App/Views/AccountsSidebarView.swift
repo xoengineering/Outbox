@@ -161,7 +161,7 @@ struct AccountsSidebarView: View {
       } label: {
         Image(systemName: "chevron.right")
           .font(.caption.weight(.semibold))
-          .foregroundStyle(emphasized ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+          .foregroundStyle(emphasized ? Palette.selectedContent : AnyShapeStyle(.secondary))
           .rotationEffect(.degrees(expandedAccountIDs.contains(account.id) ? 90 : 0))
           .frame(width: 12)
       }
@@ -197,7 +197,7 @@ struct AccountsSidebarView: View {
       select(selection)
     } label: {
       Label(title, systemImage: symbol)
-        .foregroundStyle(emphasized ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+        .foregroundStyle(emphasized ? Palette.selectedContent : AnyShapeStyle(.primary))
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
     }
@@ -221,9 +221,9 @@ struct AccountsSidebarView: View {
       if !isSelected {
         AnyShapeStyle(.clear)
       } else if isFocused {
-        AnyShapeStyle(.tint)
+        Palette.focusedSelectionFill
       } else {
-        AnyShapeStyle(.quaternary)
+        Palette.unfocusedSelectionFill
       }
     return RoundedRectangle(cornerRadius: 6).fill(fill)
   }

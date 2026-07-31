@@ -17,8 +17,8 @@ struct PostRowView: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(.orange.opacity(0.2), in: Capsule())
-            .foregroundStyle(.orange)
+            .background(post.status.color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
+            .foregroundStyle(post.status.color)
         }
       }
       Text(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))

@@ -32,8 +32,8 @@ struct PostsListView: View {
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 6) {
           allPill
-          statusPill("Drafts", status: .draft, color: .orange)
-          statusPill("Published", status: .published, color: .green)
+          statusPill("Drafts", status: .draft)
+          statusPill("Published", status: .published)
           Divider()
             .frame(height: 14)
           ForEach(Network.allCases) { network in
@@ -78,16 +78,17 @@ struct PostsListView: View {
         .font(.caption2.weight(.semibold))
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
-        .background(isOn ? AnyShapeStyle(.tint.opacity(0.15)) : AnyShapeStyle(.quaternary), in: Capsule())
-        .foregroundStyle(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+        .background(Palette.capsuleFill(AnyShapeStyle(.tint), isOn: isOn), in: Capsule())
+        .foregroundStyle(Palette.capsuleContent(AnyShapeStyle(.tint), isOn: isOn))
     }
     .buttonStyle(.plain)
     .help("Clear all filters")
   }
 
   /// A filter pill styled like the Draft badge on post rows.
-  private func statusPill(_ title: String, status: StoredPost.Status, color: Color) -> some View {
+  private func statusPill(_ title: String, status: StoredPost.Status) -> some View {
     let isOn = model.statusFilters.contains(status)
+    let tint = AnyShapeStyle(status.color)
     return Button {
       if isOn {
         model.statusFilters.remove(status)
@@ -99,8 +100,8 @@ struct PostsListView: View {
         .font(.caption2.weight(.semibold))
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
-        .background(isOn ? AnyShapeStyle(color.opacity(0.2)) : AnyShapeStyle(.quaternary), in: Capsule())
-        .foregroundStyle(isOn ? AnyShapeStyle(color) : AnyShapeStyle(.secondary))
+        .background(Palette.capsuleFill(tint, isOn: isOn), in: Capsule())
+        .foregroundStyle(Palette.capsuleContent(tint, isOn: isOn))
     }
     .buttonStyle(.plain)
     .help(status == .draft ? "Show only drafts" : "Show only published posts")
@@ -123,11 +124,8 @@ struct PostsListView: View {
       }
       .padding(.horizontal, 6)
       .padding(.vertical, 2)
-      .background(
-        isOn ? AnyShapeStyle(network.brandColor.opacity(0.15)) : AnyShapeStyle(.quaternary),
-        in: Capsule()
-      )
-      .foregroundStyle(isOn ? network.brandColor : AnyShapeStyle(.secondary))
+      .background(Palette.capsuleFill(network.brandColor, isOn: isOn), in: Capsule())
+      .foregroundStyle(Palette.capsuleContent(network.brandColor, isOn: isOn))
     }
     .buttonStyle(.plain)
     .help("Show only \(network.displayName) posts")
