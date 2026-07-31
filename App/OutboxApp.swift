@@ -15,7 +15,7 @@ struct OutboxApp: App {
         SettingsRootView()
           .environment(model)
       }
-      .windowResizability(.contentMinSize)
+      .windowResizability(.contentSize)
     #endif
   }
 }
