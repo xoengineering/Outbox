@@ -18,7 +18,7 @@ struct SettingsRootView: View {
           AccountsSettingsView()
         }
       }
-      .frame(minWidth: 520, minHeight: 340)
+      .frame(minWidth: 420, minHeight: 480)
     #else
       NavigationStack {
         List {
