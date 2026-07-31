@@ -1,7 +1,7 @@
 import OutboxKit
 import SwiftUI
 
-/// First column: All Posts plus one row per account, filtering the posts list.
+/// First column: All Posts / Published / Drafts, globally and per account.
 struct AccountsSidebarView: View {
   @Environment(AppModel.self) private var model
   #if os(iOS)
@@ -12,17 +12,19 @@ struct AccountsSidebarView: View {
     @Bindable var model = model
     List(selection: $model.sidebarSelection) {
       Section {
-        Label("All Posts", systemImage: "tray.full")
-          .tag(AppModel.SidebarSelection.all)
+        statusRows(accountID: nil)
       }
       Section("Accounts") {
         ForEach(model.accounts) { account in
-          Label {
-            Text(account.handle)
-          } icon: {
-            NetworkIconView(network: account.network)
+          DisclosureGroup {
+            statusRows(accountID: account.id)
+          } label: {
+            Label {
+              Text(account.handle)
+            } icon: {
+              NetworkIconView(network: account.network)
+            }
           }
-          .tag(AppModel.SidebarSelection.account(account.id))
         }
       }
     }
@@ -50,5 +52,15 @@ struct AccountsSidebarView: View {
         SettingsRootView()
       }
     #endif
+  }
+
+  @ViewBuilder
+  private func statusRows(accountID: UUID?) -> some View {
+    Label("All Posts", systemImage: "tray.full")
+      .tag(AppModel.SidebarSelection(accountID: accountID))
+    Label("Published", systemImage: "paperplane")
+      .tag(AppModel.SidebarSelection(accountID: accountID, status: .published))
+    Label("Drafts", systemImage: "doc.text")
+      .tag(AppModel.SidebarSelection(accountID: accountID, status: .draft))
   }
 }

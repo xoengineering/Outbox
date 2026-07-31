@@ -5,9 +5,12 @@ import OutboxKit
 /// App-wide state: configured accounts, the loaded archive, selection, and the
 /// wiring between the archive folder, Keychain, and Publisher.
 @MainActor @Observable final class AppModel {
-  enum SidebarSelection: Hashable {
-    case account(UUID)
-    case all
+  /// What the sidebar has focused: optionally one account, optionally one status.
+  ///
+  /// Both nil means "All Posts".
+  struct SidebarSelection: Hashable {
+    var accountID: UUID?
+    var status: StoredPost.Status?
   }
 
   enum DetailMode: Equatable {
@@ -22,7 +25,7 @@ import OutboxKit
   var posts: [StoredPost] = []
   var searchText = ""
   var selectedPostID: URL?
-  var sidebarSelection: SidebarSelection? = .all
+  var sidebarSelection: SidebarSelection? = SidebarSelection()
   let archiveFolder = ArchiveFolder()
 
   private let accountsRepository: AccountsRepository
@@ -51,7 +54,7 @@ import OutboxKit
     try? keychain.delete(for: account.id)
     accounts.removeAll { $0.id == account.id }
     enabledAccountIDs.remove(account.id)
-    if sidebarSelection == .account(account.id) { sidebarSelection = .all }
+    if sidebarSelection?.accountID == account.id { sidebarSelection = SidebarSelection() }
     try? accountsRepository.save(accounts)
   }
 
@@ -80,12 +83,15 @@ import OutboxKit
 
   var visiblePosts: [StoredPost] {
     var filtered = posts
-    if case .account(let accountID) = sidebarSelection,
+    if let accountID = sidebarSelection?.accountID,
       let account = accounts.first(where: { $0.id == accountID })
     {
       filtered = filtered.filter {
         $0.file.metadata.account == account.handle && $0.file.metadata.network == account.network
       }
+    }
+    if let status = sidebarSelection?.status {
+      filtered = filtered.filter { $0.status == status }
     }
     let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     if !query.isEmpty {
@@ -99,12 +105,20 @@ import OutboxKit
   }
 
   var selectedAccountLabel: String {
-    if case .account(let accountID) = sidebarSelection,
+    let scope: String
+    if let accountID = sidebarSelection?.accountID,
       let account = accounts.first(where: { $0.id == accountID })
     {
-      return account.handle
+      scope = account.handle
+    } else {
+      scope = "All Posts"
     }
-    return "All Posts"
+
+    switch sidebarSelection?.status {
+    case .draft: return "\(scope) — Drafts"
+    case .published: return "\(scope) — Published"
+    case nil: return scope
+    }
   }
 
   // MARK: - Composing

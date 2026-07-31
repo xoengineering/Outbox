@@ -12,7 +12,7 @@ public struct StoredPost: Equatable, Identifiable, Sendable {
 
   public var id: URL { fileURL }
 
-  public enum Status: Equatable, Sendable {
+  public enum Status: Equatable, Hashable, Sendable {
     case draft
     case published
   }
