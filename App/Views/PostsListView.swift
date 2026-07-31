@@ -29,6 +29,12 @@ struct PostsListView: View {
     }
     .navigationTitle(model.selectedAccountLabel)
     .toolbar {
+      ToolbarItemGroup {
+        Toggle("Drafts", systemImage: "doc.text", isOn: statusFilter(.draft))
+          .help("Show only drafts")
+        Toggle("Published", systemImage: "paperplane", isOn: statusFilter(.published))
+          .help("Show only published posts")
+      }
       ToolbarItem(placement: .primaryAction) {
         Button("New Post", systemImage: "square.and.pencil") {
           model.startNewPost()
@@ -39,6 +45,7 @@ struct PostsListView: View {
     .onChange(of: model.selectedPostID) {
       model.detailMode = .browse
     }
+    .toggleStyle(.button)
     .overlay {
       if model.visiblePosts.isEmpty {
         ContentUnavailableView(
@@ -48,5 +55,18 @@ struct PostsListView: View {
         )
       }
     }
+  }
+
+  private func statusFilter(_ status: StoredPost.Status) -> Binding<Bool> {
+    Binding(
+      get: { model.statusFilters.contains(status) },
+      set: { isOn in
+        if isOn {
+          model.statusFilters.insert(status)
+        } else {
+          model.statusFilters.remove(status)
+        }
+      }
+    )
   }
 }
