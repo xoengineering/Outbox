@@ -17,8 +17,12 @@ struct AccountsSidebarView: View {
       }
       Section("Accounts") {
         ForEach(model.accounts) { account in
-          Label(account.handle, systemImage: account.network.symbolName)
-            .tag(AppModel.SidebarSelection.account(account.id))
+          Label {
+            Text(account.handle)
+          } icon: {
+            NetworkIconView(network: account.network)
+          }
+          .tag(AppModel.SidebarSelection.account(account.id))
         }
       }
     }

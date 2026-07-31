@@ -71,8 +71,12 @@ struct PostFormView: View {
   private var formHeader: some View {
     switch mode {
     case .edit(let post):
-      Label(post.file.metadata.account, systemImage: post.file.metadata.network.symbolName)
-        .font(.headline)
+      Label {
+        Text(post.file.metadata.account)
+      } icon: {
+        NetworkIconView(network: post.file.metadata.network, size: 16)
+      }
+      .font(.headline)
     case .new:
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 8) {

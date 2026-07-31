@@ -42,8 +42,12 @@ struct PostDetailView: View {
   private var header: some View {
     VStack(alignment: .leading, spacing: 6) {
       HStack {
-        Label(post.file.metadata.account, systemImage: post.file.metadata.network.symbolName)
-          .font(.headline)
+        Label {
+          Text(post.file.metadata.account)
+        } icon: {
+          NetworkIconView(network: post.file.metadata.network, size: 16)
+        }
+        .font(.headline)
         Spacer()
         statusBadge
       }

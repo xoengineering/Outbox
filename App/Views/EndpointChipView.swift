@@ -11,7 +11,7 @@ struct EndpointChipView: View {
   var body: some View {
     Button(action: toggle) {
       HStack(spacing: 6) {
-        Image(systemName: account.network.symbolName)
+        NetworkIconView(network: account.network, size: 13)
         Text(account.handle)
           .lineLimit(1)
         Text("\(remaining)")

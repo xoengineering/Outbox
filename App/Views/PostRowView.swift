@@ -26,8 +26,7 @@ struct PostRowView: View {
         .foregroundStyle(.secondary)
         .lineLimit(2)
       HStack(spacing: 4) {
-        Image(systemName: post.file.metadata.network.symbolName)
-          .font(.caption2)
+        NetworkIconView(network: post.file.metadata.network, size: 10)
         Text(post.file.metadata.account)
           .lineLimit(1)
         Spacer()

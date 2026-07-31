@@ -37,6 +37,8 @@ All notable changes to Outbox are documented here.
   (resolved via Mastodon search / atproto getRecord with thread-root
   propagation); a Reply button on published posts prefills it.
 - Add `in_reply_to` and `composition` frontmatter fields.
+- Replace SF Symbol placeholders with real Bluesky, Mastodon, and Threads brand
+  glyphs (Simple Icons SVGs, template-rendered so they tint like symbols).
 - Move accounts and archive-folder settings into a proper Settings window
   (⌘, on macOS, General + Accounts tabs); account removal now asks for
   confirmation and explains that archived files stay on disk.
