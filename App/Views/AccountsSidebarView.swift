@@ -2,6 +2,9 @@ import OutboxKit
 import SwiftUI
 
 /// First column: All Posts / Published / Drafts, globally and per account.
+///
+/// Account groups are a flat, data-driven ForEach (not DisclosureGroup) so the
+/// chevron centers on two-line rows and expansion animates as row slides.
 struct AccountsSidebarView: View {
   @Environment(AppModel.self) private var model
   @State private var expandedAccountIDs: Set<UUID> = []
@@ -13,30 +16,22 @@ struct AccountsSidebarView: View {
     @Bindable var model = model
     List(selection: $model.sidebarSelection) {
       Section {
-        statusRows(accountID: nil, indented: false)
+        statusRow(accountID: nil, status: nil, indented: false)
+        statusRow(accountID: nil, status: .published, indented: false)
+        statusRow(accountID: nil, status: .draft, indented: false)
       }
-      Section("Accounts (custom hstack)") {
-        ForEach(model.accounts) { account in
-          accountRow(for: account)
-          if expandedAccountIDs.contains(account.id) {
-            statusRows(accountID: account.id, indented: true)
-          }
-        }
-      }
-      // Temporary A/B: same rows via DisclosureGroup, for animation comparison.
-      // Not selectable — just expand/collapse to compare the feel.
-      Section("Accounts (disclosuregroup)") {
-        ForEach(model.accounts) { account in
-          DisclosureGroup {
-            Label("All Posts", systemImage: "tray.full")
-            Label("Published", systemImage: "paperplane")
-            Label("Drafts", systemImage: "doc.text")
-          } label: {
-            SidebarAccountRowView(account: account)
+      Section("Accounts") {
+        ForEach(accountSectionRows) { row in
+          switch row.kind {
+          case .account(let account):
+            accountRow(for: account)
+          case .filter(let accountID, let status):
+            statusRow(accountID: accountID, status: status, indented: true)
           }
         }
       }
     }
+    .animation(.smooth(duration: 0.3), value: expandedAccountIDs)
     .navigationTitle("Outbox")
     .safeAreaInset(edge: .bottom) {
       HStack {
@@ -63,15 +58,41 @@ struct AccountsSidebarView: View {
     #endif
   }
 
+  // MARK: - Rows
+
+  private struct AccountSectionRow: Identifiable {
+    enum Kind {
+      case account(Account)
+      case filter(accountID: UUID, status: StoredPost.Status?)
+    }
+
+    var id: String
+    var kind: Kind
+  }
+
+  private var accountSectionRows: [AccountSectionRow] {
+    var rows: [AccountSectionRow] = []
+    for account in model.accounts {
+      rows.append(AccountSectionRow(id: "account-\(account.id)", kind: .account(account)))
+      guard expandedAccountIDs.contains(account.id) else { continue }
+      rows.append(
+        AccountSectionRow(id: "all-\(account.id)", kind: .filter(accountID: account.id, status: nil)))
+      rows.append(
+        AccountSectionRow(
+          id: "published-\(account.id)", kind: .filter(accountID: account.id, status: .published)))
+      rows.append(
+        AccountSectionRow(id: "drafts-\(account.id)", kind: .filter(accountID: account.id, status: .draft)))
+    }
+    return rows
+  }
+
   /// The account row: the chevron toggles expansion, clicking anywhere else selects.
   private func accountRow(for account: Account) -> some View {
-    let selection = accountRowSelection(for: account)
+    let selection = AppModel.SidebarSelection(accountID: account.id, isAccountRow: true)
     return HStack(spacing: 6) {
       Button {
-        withAnimation(.smooth(duration: 0.3)) {
-          if !expandedAccountIDs.insert(account.id).inserted {
-            expandedAccountIDs.remove(account.id)
-          }
+        if !expandedAccountIDs.insert(account.id).inserted {
+          expandedAccountIDs.remove(account.id)
         }
       } label: {
         Image(systemName: "chevron.right")
@@ -88,21 +109,15 @@ struct AccountsSidebarView: View {
     .tag(selection)
   }
 
-  private func accountRowSelection(for account: Account) -> AppModel.SidebarSelection {
-    AppModel.SidebarSelection(accountID: account.id, isAccountRow: true)
-  }
-
-  @ViewBuilder
-  private func statusRows(accountID: UUID?, indented: Bool) -> some View {
-    let indent: CGFloat = indented ? 26 : 0
-    Label("All Posts", systemImage: "tray.full")
-      .padding(.leading, indent)
-      .tag(AppModel.SidebarSelection(accountID: accountID))
-    Label("Published", systemImage: "paperplane")
-      .padding(.leading, indent)
-      .tag(AppModel.SidebarSelection(accountID: accountID, status: .published))
-    Label("Drafts", systemImage: "doc.text")
-      .padding(.leading, indent)
-      .tag(AppModel.SidebarSelection(accountID: accountID, status: .draft))
+  private func statusRow(accountID: UUID?, status: StoredPost.Status?, indented: Bool) -> some View {
+    let (title, symbol) =
+      switch status {
+      case .published: ("Published", "paperplane")
+      case .draft: ("Drafts", "doc.text")
+      case nil: ("All Posts", "tray.full")
+      }
+    return Label(title, systemImage: symbol)
+      .padding(.leading, indented ? 26 : 0)
+      .tag(AppModel.SidebarSelection(accountID: accountID, status: status))
   }
 }
