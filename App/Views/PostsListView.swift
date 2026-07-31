@@ -30,6 +30,7 @@ struct PostsListView: View {
     .navigationTitle(model.selectedAccountLabel)
     .safeAreaInset(edge: .top, spacing: 0) {
       HStack(spacing: 6) {
+        allPill
         statusPill("Drafts", status: .draft, color: .orange)
         statusPill("Published", status: .published, color: .green)
         Divider()
@@ -62,6 +63,24 @@ struct PostsListView: View {
         )
       }
     }
+  }
+
+  /// Clears every pill filter; highlighted when nothing is filtered.
+  private var allPill: some View {
+    let isOn = model.statusFilters.isEmpty && model.networkFilters.isEmpty
+    return Button {
+      model.statusFilters.removeAll()
+      model.networkFilters.removeAll()
+    } label: {
+      Text("All")
+        .font(.caption2.weight(.semibold))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(isOn ? AnyShapeStyle(.tint.opacity(0.15)) : AnyShapeStyle(.quaternary), in: Capsule())
+        .foregroundStyle(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+    }
+    .buttonStyle(.plain)
+    .help("Clear all filters")
   }
 
   /// A filter pill styled like the Draft badge on post rows.
