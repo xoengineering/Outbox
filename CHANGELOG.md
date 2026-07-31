@@ -18,3 +18,6 @@ All notable changes to Outbox are documented here.
   per-endpoint chips and live character counts, account management with OAuth
   (Mastodon) and app password (Bluesky) flows, publish results sheet, archive
   folder setting with security-scoped bookmarks.
+- Add PKCE (S256) to the Mastodon OAuth flow.
+- Fetch each Mastodon instance's real character limit at connect time and use it
+  in the composer.

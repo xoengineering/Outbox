@@ -33,13 +33,15 @@ public struct MastodonOAuth: Sendable {
     return try await postJSON(body, to: serverURL.appending(path: "api/v1/apps"))
   }
 
-  public func authorizationURL(on serverURL: URL, clientID: String) -> URL {
+  public func authorizationURL(on serverURL: URL, clientID: String, pkce: PKCE) -> URL {
     var components = URLComponents(
       url: serverURL.appending(path: "oauth/authorize"),
       resolvingAgainstBaseURL: false
     )!
     components.queryItems = [
       URLQueryItem(name: "client_id", value: clientID),
+      URLQueryItem(name: "code_challenge", value: pkce.challenge),
+      URLQueryItem(name: "code_challenge_method", value: "S256"),
       URLQueryItem(name: "redirect_uri", value: Self.redirectURI),
       URLQueryItem(name: "response_type", value: "code"),
       URLQueryItem(name: "scope", value: Self.scopes),
@@ -59,12 +61,14 @@ public struct MastodonOAuth: Sendable {
   public func exchangeCode(
     _ code: String,
     on serverURL: URL,
+    pkce: PKCE,
     registration: AppRegistration
   ) async throws -> String {
     let body = [
       "client_id": registration.clientID,
       "client_secret": registration.clientSecret,
       "code": code,
+      "code_verifier": pkce.verifier,
       "grant_type": "authorization_code",
       "redirect_uri": Self.redirectURI,
       "scope": Self.scopes,

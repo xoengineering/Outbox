@@ -1,0 +1,12 @@
+{
+  "domain": "ruby.social",
+  "title": "Ruby.social",
+  "version": "4.4.1",
+  "configuration": {
+    "statuses": {
+      "max_characters": 5000,
+      "max_media_attachments": 4,
+      "characters_reserved_per_url": 23
+    }
+  }
+}

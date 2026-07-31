@@ -70,8 +70,13 @@ struct AddMastodonAccountView: View {
 
     do {
       let oauth = MastodonOAuth()
+      let pkce = PKCE()
       let registration = try await oauth.registerApp(on: serverURL)
-      let authorizationURL = oauth.authorizationURL(on: serverURL, clientID: registration.clientID)
+      let authorizationURL = oauth.authorizationURL(
+        on: serverURL,
+        clientID: registration.clientID,
+        pkce: pkce
+      )
       let callback = try await webAuthenticationSession.authenticate(
         using: authorizationURL,
         callbackURLScheme: "outbox",
@@ -84,10 +89,12 @@ struct AddMastodonAccountView: View {
         return
       }
 
-      let token = try await oauth.exchangeCode(code, on: serverURL, registration: registration)
+      let token = try await oauth.exchangeCode(code, on: serverURL, pkce: pkce, registration: registration)
       let verified = try await oauth.verifyCredentials(on: serverURL, token: token)
+      let maximumCharacters = await MastodonInstance().maximumCharacters(on: serverURL)
       let account = Account(
         handle: "@\(verified.username)@\(cleanedDomain)",
+        maximumCharacters: maximumCharacters,
         network: .mastodon,
         serverURL: serverURL
       )

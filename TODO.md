@@ -36,8 +36,8 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
    (developers.facebook.com/docs/threads) — needs a Meta app registration.
 9. **Frontmatter schema**: `network`, `account`, `created_at`, then after publish
    `published_at`, `id`, `url`. Kept minimal on purpose.
-10. **Mastodon OAuth without PKCE for now** (Mastodon supports PKCE from 4.3);
-    add PKCE + verify it against older instances?
+10. **Mastodon OAuth uses PKCE (S256)**. Instances older than 4.3 ignore the PKCE
+    params, which is harmless — but I haven't verified against a real old instance.
 11. **Xcode project via XcodeGen** (`project.yml` → `script/generate`), so the
     `.xcodeproj` is gitignored and regenerable.
 
@@ -72,9 +72,9 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
 
 ## Milestone 3 — Robustness
 
-- [ ] Mastodon: fetch instance config (`/api/v2/instance`) to learn real character
+- [x] Mastodon: fetch instance config (`/api/v2/instance`) to learn real character
       limit per account; store as `Account.maximumCharacters`
-- [ ] Mastodon PKCE
+- [x] Mastodon PKCE (S256, RFC 7636 known-answer tested)
 - [ ] Bluesky: session refresh (reuse `refreshJwt` instead of new session per post)
 - [ ] Retry/queue: posts that fail to syndicate stay drafts; re-publish from file
 - [ ] Drafts browser: list local archive, open file in editor, publish later
