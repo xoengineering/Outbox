@@ -4,8 +4,9 @@ import SwiftUI
 /// First column: All Posts plus one row per account, filtering the posts list.
 struct AccountsSidebarView: View {
   @Environment(AppModel.self) private var model
-  @Binding var showsAccounts: Bool
-  @Binding var showsSettings: Bool
+  #if os(iOS)
+    @State private var showsSettings = false
+  #endif
 
   var body: some View {
     @Bindable var model = model
@@ -24,17 +25,26 @@ struct AccountsSidebarView: View {
     .navigationTitle("Outbox")
     .safeAreaInset(edge: .bottom) {
       HStack {
-        Button("Manage Accounts", systemImage: "person.crop.circle.badge.plus") {
-          showsAccounts = true
-        }
+        #if os(macOS)
+          SettingsLink {
+            Label("Settings", systemImage: "gearshape")
+          }
+          .help("Settings (⌘,)")
+        #else
+          Button("Settings", systemImage: "gearshape") {
+            showsSettings = true
+          }
+        #endif
         Spacer()
-        Button("Settings", systemImage: "gearshape") {
-          showsSettings = true
-        }
       }
       .labelStyle(.iconOnly)
       .buttonStyle(.borderless)
       .padding(10)
     }
+    #if os(iOS)
+      .sheet(isPresented: $showsSettings) {
+        SettingsRootView()
+      }
+    #endif
   }
 }

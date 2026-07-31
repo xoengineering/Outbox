@@ -77,7 +77,7 @@ struct PostFormView: View {
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 8) {
           if model.accounts.isEmpty {
-            Text("Add an account in the sidebar to publish anywhere.")
+            Text("Add an account in Settings to publish anywhere.")
               .foregroundStyle(.secondary)
           }
           ForEach(model.accounts) { account in

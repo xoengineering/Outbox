@@ -9,5 +9,12 @@ struct OutboxApp: App {
       ContentView()
         .environment(model)
     }
+
+    #if os(macOS)
+      Settings {
+        SettingsRootView()
+          .environment(model)
+      }
+    #endif
   }
 }
