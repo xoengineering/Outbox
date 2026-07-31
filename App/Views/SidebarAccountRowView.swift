@@ -13,9 +13,11 @@ struct SidebarAccountRowView: View {
         Text(account.displayName ?? account.handle)
           .lineLimit(1)
         HStack(spacing: 4) {
-          NetworkIconView(network: account.network, size: 10)
-            .padding(2)
-            .background(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.clear), in: Circle())
+          NetworkIconView(
+            network: account.network,
+            size: 10,
+            tint: isSelected ? AnyShapeStyle(.white) : nil
+          )
           Text(account.handle)
             .lineLimit(1)
         }
@@ -24,12 +26,6 @@ struct SidebarAccountRowView: View {
       }
     }
     .padding(.vertical, 2)
-    .padding(.leading, 4)
-    // DisclosureGroup aligns its chevron to the label's first text baseline;
-    // remap it to the row's vertical center so the chevron centers on both lines.
-    .alignmentGuide(.firstTextBaseline) { dimensions in
-      dimensions[VerticalAlignment.center]
-    }
   }
 
   @ViewBuilder
