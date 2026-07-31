@@ -82,6 +82,7 @@ struct PostDetailView: View {
       if let remoteURL = post.file.metadata.remoteURL {
         Label {
           Link(remoteURL.absoluteString, destination: remoteURL)
+            .multilineTextAlignment(.leading)
         } icon: {
           Image(systemName: "link")
         }
@@ -89,6 +90,7 @@ struct PostDetailView: View {
       if let inReplyTo = post.file.metadata.inReplyTo {
         Label {
           Link("In reply to \(inReplyTo.absoluteString)", destination: inReplyTo)
+            .multilineTextAlignment(.leading)
         } icon: {
           Image(systemName: "arrowshape.turn.up.left")
         }
