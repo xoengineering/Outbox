@@ -26,6 +26,13 @@ struct ContentView: View {
           .frame(minWidth: 380)
         #endif
     }
+    .background {
+      Button("Find") {
+        isSearchFocused = true
+      }
+      .keyboardShortcut("f", modifiers: .command)
+      .hidden()
+    }
     .task {
       await model.reloadPosts()
       if lastFocusedColumn == "search" {
