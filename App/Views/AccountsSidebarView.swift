@@ -15,11 +15,24 @@ struct AccountsSidebarView: View {
       Section {
         statusRows(accountID: nil, indented: false)
       }
-      Section("Accounts") {
+      Section("Accounts (custom hstack)") {
         ForEach(model.accounts) { account in
           accountRow(for: account)
           if expandedAccountIDs.contains(account.id) {
             statusRows(accountID: account.id, indented: true)
+          }
+        }
+      }
+      // Temporary A/B: same rows via DisclosureGroup, for animation comparison.
+      // Not selectable — just expand/collapse to compare the feel.
+      Section("Accounts (disclosuregroup)") {
+        ForEach(model.accounts) { account in
+          DisclosureGroup {
+            Label("All Posts", systemImage: "tray.full")
+            Label("Published", systemImage: "paperplane")
+            Label("Drafts", systemImage: "doc.text")
+          } label: {
+            SidebarAccountRowView(account: account)
           }
         }
       }
