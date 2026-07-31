@@ -45,7 +45,7 @@ struct PostFormView: View {
         .focused($isContentFocused)
         .scrollContentBackground(.hidden)
         .padding(8)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+        .background(Palette.editorFill, in: RoundedRectangle(cornerRadius: 12))
         .frame(minHeight: 180)
 
       if let errorMessage {

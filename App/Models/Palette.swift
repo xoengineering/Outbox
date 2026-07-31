@@ -30,6 +30,8 @@ enum Palette {
   static let focusedSelectionFill = AnyShapeStyle(.tint)
   /// Row highlight when selection is in an unfocused column.
   static let unfocusedSelectionFill = AnyShapeStyle(.quaternary)
+  /// Background of the post content editor.
+  static let editorFill = AnyShapeStyle(.quaternary.opacity(0.5))
   /// Background of inactive pills and chips.
   static let inactiveFill = AnyShapeStyle(.quaternary)
 
