@@ -20,9 +20,6 @@ struct ContentView: View {
         .searchable(text: $model.searchText, prompt: "Search posts")
         .searchFocused($isSearchFocused)
         .navigationSplitViewColumnWidth(min: 240, ideal: 320)
-        #if os(macOS)
-          .focusSection()
-        #endif
     } detail: {
       DetailColumnView()
         #if os(macOS)

@@ -13,6 +13,9 @@ struct PostsListView: View {
       PostRowView(post: post)
     }
     .focused($isFocused)
+    #if os(macOS)
+      .focusSection()
+    #endif
     .onChange(of: isFocused) {
       if isFocused { lastFocusedColumn = "posts" }
     }
