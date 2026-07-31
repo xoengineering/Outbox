@@ -1,54 +1,131 @@
 # TODO
 
-Prompt
-This is a brand new empty project.
+Outbox: a write-only social media publishing app for macOS, iOS, and iPadOS.
+Post to socials without the distraction of feed reading. Every post is saved
+locally as a plaintext Markdown file first; syndication to each network is a
+separate step (POSSE).
 
-We're making an app to publish to social media sites, but not to read/scroll through feeds.
-
-# Sites
-
-The first site I care about are:
-
-- Mastodon (ActivityPub)
-- Bluesky (atproto)
-- Threads (ActivityPub/custom API)
-
-Later I will care about:
-
-- IndieWeb (MicroPub)
-- Instagram (if possible)
-- Blogging (Tumblr, Wordpress, ...)
-- Email!
+Minimums: macOS/iOS/iPadOS 26.5, Swift 6.3+, SwiftUI, Swift Testing.
 
 ---
 
-# Publish to file first
+## Open Questions
 
-When 'publishing', first save to a file.
-That way, the user/author always owns a copy of their content.
-Then, 'publishing' to social media site is a separate step,
-using the content from the content and formatting in a web/API request shaped for each endpoint.
-In IndieWeb land, we call this POSSE (Publish on own site, syndicate elsewhere).
-This also means that if a new site comes along, say "MySpace 3000",
-then the user simply adds a new authed account to their app config to start crossposting or backfilling.
+Decisions I made unilaterally to keep moving — flag anything you want changed.
 
-# File format on disk
+1. **Bundle ID / org**: used `com.xoengineering.Outbox` and `https://xoengineering.com`
+   as the app website in Mastodon app registration (prior art used
+   `com.somedarkenergy.Outbox`). Which org identity is right?
+2. **Bluesky auth**: v1 uses app passwords (Settings → App Passwords on Bluesky),
+   stored in Keychain. This bends the "never ask username/password" rule — full
+   atproto OAuth (PKCE + DPoP + PAR) is a heavy lift I deferred. Upgrade later?
+3. **Folder layout**: the TODO prose said flat `YYYY-MM-DD-slug-N.md` filenames but
+   the examples showed nested `YYYY/MM/DD/slug-N.md`. I followed the examples (nested).
+4. **Nth-of-day counter**: `-N` is the Nth post of that day for that account
+   (count of existing `.md` files in the day folder + 1), not the Nth with the same slug.
+5. **Day boundaries**: file paths use the user's local timezone for YYYY/MM/DD;
+   frontmatter timestamps are stored in UTC (`...Z`).
+6. **One file per endpoint**: publishing one composition to 3 accounts writes 3 files
+   (one per network/account), each carrying its own receipt (id/url/published_at).
+   Alternative: one canonical file + syndication links. I followed your examples.
+7. **Mastodon counting**: counts Unicode codepoints after replacing each URL with 23
+   characters and stripping mention domains — matches Mastodon's documented rules.
+   Bluesky counts grapheme clusters (300); Threads flat 500.
+8. **Threads**: stub adapter that no-ops (saves the file locally, sends nothing);
+   UI shows the endpoint. Real implementation would use the Threads API
+   (developers.facebook.com/docs/threads) — needs a Meta app registration.
+9. **Frontmatter schema**: `network`, `account`, `created_at`, then after publish
+   `published_at`, `id`, `url`. Kept minimal on purpose.
+10. **Mastodon OAuth without PKCE for now** (Mastodon supports PKCE from 4.3);
+    add PKCE + verify it against older instances?
+11. **Xcode project via XcodeGen** (`project.yml` → `script/generate`), so the
+    `.xcodeproj` is gitignored and regenerable.
 
-Markdown + YAML frontmatter.
+---
 
-Folder/file structure.
+## Milestone 1 — Core (done)
 
-Configurable base location:
+- [x] `OutboxKit` Swift package, testable from CLI (`script/test`)
+- [x] `PostFile`: Markdown + YAML frontmatter, parse (Yams) + byte-stable serialize
+- [x] `Slug` derivation from content
+- [x] `PostStore`: `<base>/<Network>/<account>/<YYYY>/<MM>/<DD>/<slug>-<N>.md`
+- [x] `CharacterCount`: per-network rules + limits
+- [x] `MastodonAdapter`: `POST /api/v1/statuses` (Bearer token)
+- [x] `BlueskyAdapter`: createSession + createRecord with link facets (UTF-8 byte offsets)
+- [x] `ThreadsAdapter`: no-op stub
+- [x] `Publisher`: file-first orchestration; per-target failures isolated
+- [x] `MastodonOAuth`: app registration, authorize URL, token exchange, verify
+- [x] `KeychainStore` (data-protection keychain) + `AccountsRepository` (JSON)
 
-~/Documents/Outbox/NetworkName/AccountName/YYYY-MM-DD-slug-NthOfDayCount.md
+## Milestone 2 — App shell (in progress)
 
-Examples:
-~/Documents/Outbox/
-~/Documents/Outbox/Mastodon/@veganstraightedge@ruby.social/2026/09/18/happy-bday-to-me-1.md
-~/Documents/Outbox/Bluesky/@veganstraightedge.com/2026/09/18/happy-bday-to-me-1.md
+- [ ] XcodeGen multiplatform target (macOS + iOS/iPadOS 26.5)
+- [ ] Composer: text editor + per-endpoint toggle chips with live character
+      count/limit per account, over-limit warning blocks publish to that endpoint
+- [ ] Accounts screen: add/remove Mastodon (OAuth via ASWebAuthenticationSession,
+      `outbox://oauth/mastodon` callback) and Bluesky (app password) accounts
+- [ ] Threads visible in UI as stub ("saves locally only")
+- [ ] Settings: archive base folder picker (default `~/Documents/Outbox`),
+      security-scoped bookmark so sandboxed access survives relaunch
+- [ ] Publish flow: results sheet per endpoint (link to remote post + local file)
+- [ ] App sandbox ON, entitlements: network client, user-selected file read/write
 
-# Auth
+## Milestone 3 — Robustness
 
-Store important credentials/tokens securely in Keychain.
-OAuth whenever possible.
-Never ask username/password directly.
+- [ ] Mastodon: fetch instance config (`/api/v2/instance`) to learn real character
+      limit per account; store as `Account.maximumCharacters`
+- [ ] Mastodon PKCE
+- [ ] Bluesky: session refresh (reuse `refreshJwt` instead of new session per post)
+- [ ] Retry/queue: posts that fail to syndicate stay drafts; re-publish from file
+- [ ] Drafts browser: list local archive, open file in editor, publish later
+- [ ] Reveal in Finder / Files.app
+- [ ] Error surfaces: rate limits, dead instances, expired tokens (re-auth prompt)
+- [ ] iCloud Drive-safe file writing (coordinate if base folder is in iCloud)
+
+## Milestone 4 — More content types
+
+- [ ] Images/media uploads (Mastodon `/api/v2/media`, Bluesky blob upload) + alt text
+- [ ] Content warnings / spoiler text (Mastodon), labels (Bluesky)
+- [ ] Reply-to / threading chains
+- [ ] Frontmatter grows: `media`, `alt`, `cw`, `in_reply_to`
+
+## Milestone 5 — More networks
+
+- [ ] IndieWeb Micropub + IndieAuth — excavate packages from
+      `z_Outbox_previously/Outbox 1` (add PKCE, inject transport, real compliance tests)
+- [ ] Threads for real (Meta app review required)
+- [ ] Blogging: WordPress, Tumblr, Ghost
+- [ ] Email (newsletter-style; SMTP or provider APIs)
+- [ ] Instagram (if ever possible)
+
+## Milestone 6 — Ship
+
+- [ ] App icon, name check, App Store metadata
+- [ ] Direct distribution first (Developer ID + notarization), App Store after
+- [ ] Sparkle or TestFlight story for updates
+- [ ] Onboarding: first-run explains file-first philosophy
+
+---
+
+## Prior art notes (excavated 2026-07-31)
+
+From `~/Developer/dark-energy/z_Outbox_previously`:
+
+**Worth keeping**
+- `Outbox 1/Micropub` (403 LOC) + `Outbox 1/IndieAuth` (252 LOC): genuinely working
+  clients for Milestone 5. Need PKCE, URLSession injection, honest tests.
+- `Outbox 1/test-server/server.rb`: Sinatra IndieAuth provider bootable from Swift
+  tests (subprocess + poll-until-ready) — reusable harness pattern for fake servers.
+- `Outbox 1/README.md`: product vision + curated spec links.
+- `Outbox/Views/EditorView.swift`: DispatchSource file-watcher (small, correct).
+- `.swift-format` config (already copied into this repo).
+
+**Dead ends to avoid (lessons applied here)**
+- Packages never wired into the app → the two halves never met. Wire early.
+- In-memory singleton DataStore, `"drafts"` magic strings → untestable thrash.
+- `ENABLE_APP_SANDBOX = NO` + bare folder path in UserDefaults → use
+  security-scoped bookmarks instead.
+- UI claiming "credentials stored securely" while discarding them. Never ship that.
+- Zero Mastodon/Bluesky/network code existed in either attempt — all written fresh here.
+- Inflated test claims (micropub.rocks "compliance" tests that assert
+  `token.count > 0`). Re-verify against real servers.
