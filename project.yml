@@ -1,0 +1,41 @@
+name: Outbox
+options:
+  bundleIdPrefix: com.xoengineering
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "26.5"
+    macOS: "26.5"
+packages:
+  OutboxKit:
+    path: OutboxKit
+targets:
+  Outbox:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources: [App]
+    dependencies:
+      - package: OutboxKit
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: App/Outbox.entitlements
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        PRODUCT_BUNDLE_IDENTIFIER: com.xoengineering.Outbox
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Outbox
+        CFBundleURLTypes:
+          - CFBundleURLName: com.xoengineering.Outbox
+            CFBundleURLSchemes: [outbox]
+        LSSupportsOpeningDocumentsInPlace: true
+        UIFileSharingEnabled: true
+        UILaunchScreen: {}
+    entitlements:
+      path: App/Outbox.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.network.client: true

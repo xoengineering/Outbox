@@ -36,6 +36,15 @@ public struct BlueskyAdapter: SocialServiceAdapter {
     return .published(receipt)
   }
 
+  /// Confirms an app password works by creating a session; returns the canonical handle.
+  public func verifyCredential(_ credential: Credential, serverURL: URL) async throws -> String {
+    guard case .appPassword(let identifier, let password) = credential else {
+      throw AdapterError.missingCredential
+    }
+    let session = try await createSession(identifier: identifier, password: password, serverURL: serverURL)
+    return session.handle
+  }
+
   /// Maps `at://did:plc:xyz/app.bsky.feed.post/<rkey>` to the public bsky.app permalink.
   func webURL(handle: String, recordURI: String) -> URL? {
     guard let recordKey = recordURI.split(separator: "/").last else { return nil }

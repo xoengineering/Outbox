@@ -74,6 +74,15 @@ import Testing
     #expect(features?.first?["uri"] as? String == "https://example.com")
   }
 
+  @Test func verifiesAppPasswordAndReturnsHandle() async throws {
+    let transport = FixtureTransport(fixtureName: "bluesky-create-session.json")
+    let adapter = BlueskyAdapter(transport: transport)
+
+    let handle = try await adapter.verifyCredential(credential, serverURL: account.serverURL)
+
+    #expect(handle == "veganstraightedge.com")
+  }
+
   @Test func requiresAppPassword() async throws {
     let adapter = BlueskyAdapter(transport: FixtureTransport(stubs: []))
 
