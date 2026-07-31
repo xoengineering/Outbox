@@ -21,3 +21,7 @@ All notable changes to Outbox are documented here.
 - Add PKCE (S256) to the Mastodon OAuth flow.
 - Fetch each Mastodon instance's real character limit at connect time and use it
   in the composer.
+- Sign macOS builds with the development team so the data-protection Keychain
+  works; fall back to the login keychain in unsigned builds.
+- Show the real OSStatus message in Keychain errors.
+- Make text in the add-account modals selectable.

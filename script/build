@@ -12,7 +12,6 @@ case "${1:-macos}" in
     xcodebuild -project Outbox.xcodeproj \
       -scheme Outbox \
       -destination "platform=macOS" \
-      CODE_SIGN_IDENTITY=- \
       build
     ;;
   ios)

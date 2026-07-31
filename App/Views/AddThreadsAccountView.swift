@@ -36,6 +36,7 @@ struct AddThreadsAccountView: View {
         }
         .disabled(username.isEmpty)
       }
+      .textSelection(.enabled)
       .navigationTitle("Add Threads")
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {

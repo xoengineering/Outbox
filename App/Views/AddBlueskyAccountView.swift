@@ -43,6 +43,7 @@ struct AddBlueskyAccountView: View {
         }
         .disabled(handle.isEmpty || appPassword.isEmpty || isWorking)
       }
+      .textSelection(.enabled)
       .navigationTitle("Add Bluesky")
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {

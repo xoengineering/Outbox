@@ -18,6 +18,8 @@ targets:
     settings:
       base:
         CODE_SIGN_ENTITLEMENTS: App/Outbox.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: NYT6VPP97W
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
         PRODUCT_BUNDLE_IDENTIFIER: engineering.xo.Outbox

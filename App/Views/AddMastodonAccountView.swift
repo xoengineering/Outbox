@@ -42,6 +42,7 @@ struct AddMastodonAccountView: View {
         }
         .disabled(domain.isEmpty || isWorking)
       }
+      .textSelection(.enabled)
       .navigationTitle("Add Mastodon")
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {

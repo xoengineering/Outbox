@@ -4,6 +4,9 @@ import Security
 /// Stores per-account credentials in the data-protection Keychain.
 ///
 /// Keys are account UUIDs; values are JSON-encoded `Credential`s.
+/// Builds without a real signing identity (ad-hoc/unsigned) can't use the
+/// data-protection keychain, so operations fall back to the login keychain
+/// when the entitlement is missing.
 public struct KeychainStore: Sendable {
   public var service: String
 
@@ -11,8 +14,16 @@ public struct KeychainStore: Sendable {
     self.service = service
   }
 
-  public enum KeychainError: Error, Equatable {
+  public enum KeychainError: Error, Equatable, LocalizedError {
     case unexpectedStatus(OSStatus)
+
+    public var errorDescription: String? {
+      switch self {
+      case .unexpectedStatus(let status):
+        let message = SecCopyErrorMessageString(status, nil) as String? ?? "unknown"
+        return "Keychain error \(status): \(message)"
+      }
+    }
   }
 
   public func save(_ credential: Credential, for accountID: UUID) throws {
@@ -23,10 +34,13 @@ public struct KeychainStore: Sendable {
       kSecAttrAccount: accountID.uuidString,
       kSecAttrService: service,
       kSecClass: kSecClassGenericPassword,
-      kSecUseDataProtectionKeychain: true,
       kSecValueData: data,
     ]
-    let status = SecItemAdd(attributes as CFDictionary, nil)
+    let status = withEntitlementFallback { useDataProtection in
+      var attributes = attributes
+      attributes[kSecUseDataProtectionKeychain] = useDataProtection
+      return SecItemAdd(attributes as CFDictionary, nil)
+    }
     guard status == errSecSuccess else { throw KeychainError.unexpectedStatus(status) }
   }
 
@@ -37,12 +51,16 @@ public struct KeychainStore: Sendable {
       kSecClass: kSecClassGenericPassword,
       kSecMatchLimit: kSecMatchLimitOne,
       kSecReturnData: true,
-      kSecUseDataProtectionKeychain: true,
     ]
     var result: CFTypeRef?
-    guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-      let data = result as? Data
-    else { return nil }
+    var data: Data?
+    let status = withEntitlementFallback { useDataProtection in
+      var query = query
+      query[kSecUseDataProtectionKeychain] = useDataProtection
+      return SecItemCopyMatching(query as CFDictionary, &result)
+    }
+    if status == errSecSuccess { data = result as? Data }
+    guard let data else { return nil }
     return try? JSONDecoder().decode(Credential.self, from: data)
   }
 
@@ -51,11 +69,20 @@ public struct KeychainStore: Sendable {
       kSecAttrAccount: accountID.uuidString,
       kSecAttrService: service,
       kSecClass: kSecClassGenericPassword,
-      kSecUseDataProtectionKeychain: true,
     ]
-    let status = SecItemDelete(query as CFDictionary)
+    let status = withEntitlementFallback { useDataProtection in
+      var query = query
+      query[kSecUseDataProtectionKeychain] = useDataProtection
+      return SecItemDelete(query as CFDictionary)
+    }
     guard status == errSecSuccess || status == errSecItemNotFound else {
       throw KeychainError.unexpectedStatus(status)
     }
+  }
+
+  private func withEntitlementFallback(_ operation: (_ useDataProtection: Bool) -> OSStatus) -> OSStatus {
+    let status = operation(true)
+    guard status == errSecMissingEntitlement else { return status }
+    return operation(false)
   }
 }
