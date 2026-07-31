@@ -1,0 +1,8 @@
+{
+  "id": "563419",
+  "name": "Outbox",
+  "website": "https://xoengineering.com",
+  "redirect_uri": "outbox://oauth/mastodon",
+  "client_id": "TWhM-tNSuncnqN7DBJmoyeLnk6K3iJJ71KKXxgL1hPM",
+  "client_secret": "ZEaFUFmF0umgBX1qKJDjaU99Q31lDkOU8NutzTOoBw"
+}
