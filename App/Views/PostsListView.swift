@@ -19,6 +19,11 @@ struct PostsListView: View {
     .onChange(of: isFocused) {
       if isFocused { lastFocusedColumn = "posts" }
     }
+    .onChange(of: model.focusRequest) {
+      guard model.focusRequest == .posts else { return }
+      isFocused = true
+      model.focusRequest = nil
+    }
     .task {
       if lastFocusedColumn == "posts" { isFocused = true }
     }

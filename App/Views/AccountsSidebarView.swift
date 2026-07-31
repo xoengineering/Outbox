@@ -51,6 +51,11 @@ struct AccountsSidebarView: View {
       .onChange(of: isFocused) {
         if isFocused { lastFocusedColumn = "accounts" }
       }
+      .onChange(of: model.focusRequest) {
+        guard model.focusRequest == .accounts else { return }
+        isFocused = true
+        model.focusRequest = nil
+      }
       .task {
         if lastFocusedColumn == "accounts" { isFocused = true }
       }

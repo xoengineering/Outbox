@@ -65,6 +65,11 @@ struct PostFormView: View {
     .task {
       isContentFocused = true
     }
+    .onChange(of: model.focusRequest) {
+      guard model.focusRequest == .form else { return }
+      isContentFocused = true
+      model.focusRequest = nil
+    }
     .sheet(item: $publishRun, onDismiss: finishAfterPublish) { run in
       PublishResultsView(results: run.results)
     }

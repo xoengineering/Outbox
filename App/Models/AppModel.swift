@@ -22,8 +22,16 @@ import OutboxKit
     case edit(StoredPost)
   }
 
+  /// A one-shot focus request (⌘1/⌘2/⌘3); the target view consumes and clears it.
+  enum FocusTarget {
+    case accounts
+    case form
+    case posts
+  }
+
   var accounts: [Account] = []
   var detailMode: DetailMode = .browse
+  var focusRequest: FocusTarget?
   var enabledAccountIDs: Set<UUID> = []
   var posts: [StoredPost] = []
   var searchText = ""

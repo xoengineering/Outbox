@@ -27,10 +27,26 @@ struct ContentView: View {
         #endif
     }
     .background {
-      Button("Find") {
-        isSearchFocused = true
+      Group {
+        Button("Find") {
+          isSearchFocused = true
+        }
+        .keyboardShortcut("f", modifiers: .command)
+        Button("Focus Accounts") {
+          model.focusRequest = .accounts
+        }
+        .keyboardShortcut("1", modifiers: .command)
+        Button("Focus Posts") {
+          model.focusRequest = .posts
+        }
+        .keyboardShortcut("2", modifiers: .command)
+        Button("Focus Form") {
+          if model.detailMode != .browse {
+            model.focusRequest = .form
+          }
+        }
+        .keyboardShortcut("3", modifiers: .command)
       }
-      .keyboardShortcut("f", modifiers: .command)
       .hidden()
     }
     .task {
