@@ -1,0 +1,11 @@
+#!/bin/sh
+# script/setup: set up the project in an initial state after cloning.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+script/bootstrap
+script/generate
+
+echo "Setup complete."

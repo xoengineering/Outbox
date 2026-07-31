@@ -1,0 +1,11 @@
+#!/bin/sh
+# script/run: build and launch the macOS app.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+script/build macos
+
+APP_PATH=$(xcodebuild -project Outbox.xcodeproj -scheme Outbox -destination "platform=macOS" -showBuildSettings build 2>/dev/null | awk -F' = ' '/ BUILT_PRODUCTS_DIR/ {print $2; exit}')
+open "$APP_PATH/Outbox.app"

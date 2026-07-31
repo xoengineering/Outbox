@@ -1,0 +1,18 @@
+#!/bin/sh
+# script/bootstrap: resolve all dependencies that the app requires to run.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+if ! command -v xcodegen >/dev/null 2>&1; then
+  echo "Installing xcodegen..."
+  brew install xcodegen
+fi
+
+if ! command -v swiftlint >/dev/null 2>&1; then
+  echo "Installing swiftlint..."
+  brew install swiftlint
+fi
+
+echo "Bootstrap complete."

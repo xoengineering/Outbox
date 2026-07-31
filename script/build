@@ -1,0 +1,29 @@
+#!/bin/sh
+# script/build: build the app for macOS (default) or iOS (script/build ios).
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+script/generate
+
+case "${1:-macos}" in
+  macos)
+    xcodebuild -project Outbox.xcodeproj \
+      -scheme Outbox \
+      -destination "platform=macOS" \
+      CODE_SIGN_IDENTITY=- \
+      build
+    ;;
+  ios)
+    xcodebuild -project Outbox.xcodeproj \
+      -scheme Outbox \
+      -destination "generic/platform=iOS Simulator" \
+      CODE_SIGNING_ALLOWED=NO \
+      build
+    ;;
+  *)
+    echo "Usage: script/build [macos|ios]" >&2
+    exit 1
+    ;;
+esac

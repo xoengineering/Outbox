@@ -1,0 +1,9 @@
+#!/bin/sh
+# script/lint: check formatting (Apple structure) and style (community conventions).
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+swift format --lint --recursive App OutboxKit
+swiftlint lint --quiet

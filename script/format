@@ -1,0 +1,8 @@
+#!/bin/sh
+# script/format: format all Swift sources in place.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+swift format --in-place --recursive App OutboxKit

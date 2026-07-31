@@ -1,0 +1,8 @@
+#!/bin/sh
+# script/generate: regenerate Outbox.xcodeproj from project.yml.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+xcodegen generate
