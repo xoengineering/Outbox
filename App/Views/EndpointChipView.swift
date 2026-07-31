@@ -5,6 +5,8 @@ import SwiftUI
 ///
 /// Toggled off: gray background, brand-colored icon.
 /// Toggled on: brand-colored background, white icon.
+/// Toggled on but over the limit: the brand color screens back to 10% so the
+/// red count and outline stay legible.
 struct EndpointChipView: View {
   var account: Account
   var isEnabled: Bool
@@ -17,21 +19,18 @@ struct EndpointChipView: View {
         NetworkIconView(
           network: account.network,
           size: 13,
-          tint: isEnabled ? account.network.brandContrastColor : nil
+          tint: isSolidBrand ? account.network.brandContrastColor : nil
         )
         Text(account.handle)
           .lineLimit(1)
-          .foregroundStyle(isEnabled ? account.network.brandContrastColor : AnyShapeStyle(.primary))
+          .foregroundStyle(isSolidBrand ? account.network.brandContrastColor : AnyShapeStyle(.primary))
         Text("\(remaining)")
           .monospacedDigit()
           .foregroundStyle(countStyle)
       }
       .padding(.horizontal, 10)
       .padding(.vertical, 6)
-      .background(
-        isEnabled ? account.network.brandColor : AnyShapeStyle(.quaternary),
-        in: Capsule()
-      )
+      .background(backgroundStyle, in: Capsule())
       .overlay {
         if isOverLimit && isEnabled {
           Capsule().strokeBorder(.red, lineWidth: 1.5)
@@ -45,11 +44,18 @@ struct EndpointChipView: View {
 
   private var isOverLimit: Bool { remaining < 0 }
 
+  /// Full-strength brand background only when enabled and within the limit.
+  private var isSolidBrand: Bool { isEnabled && !isOverLimit }
+
+  private var backgroundStyle: AnyShapeStyle {
+    guard isEnabled else { return AnyShapeStyle(.quaternary) }
+    guard !isOverLimit else { return AnyShapeStyle(account.network.brandColor.opacity(0.1)) }
+    return account.network.brandColor
+  }
+
   private var countStyle: AnyShapeStyle {
-    if isEnabled {
-      return isOverLimit ? AnyShapeStyle(.red) : account.network.brandContrastColor
-    }
     if isOverLimit { return AnyShapeStyle(.red) }
+    if isSolidBrand { return account.network.brandContrastColor }
     if remaining <= 20 { return AnyShapeStyle(.orange) }
     return AnyShapeStyle(.secondary)
   }
