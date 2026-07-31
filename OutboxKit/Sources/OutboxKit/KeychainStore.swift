@@ -52,16 +52,16 @@ public struct KeychainStore: Sendable {
       kSecMatchLimit: kSecMatchLimitOne,
       kSecReturnData: true,
     ]
-    var result: CFTypeRef?
-    var data: Data?
-    let status = withEntitlementFallback { useDataProtection in
+    for useDataProtection in [true, false] {
       var query = query
       query[kSecUseDataProtectionKeychain] = useDataProtection
-      return SecItemCopyMatching(query as CFDictionary, &result)
+      var result: CFTypeRef?
+      guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+        let data = result as? Data
+      else { continue }
+      return try? JSONDecoder().decode(Credential.self, from: data)
     }
-    if status == errSecSuccess { data = result as? Data }
-    guard let data else { return nil }
-    return try? JSONDecoder().decode(Credential.self, from: data)
+    return nil
   }
 
   public func delete(for accountID: UUID) throws {
@@ -70,13 +70,13 @@ public struct KeychainStore: Sendable {
       kSecAttrService: service,
       kSecClass: kSecClassGenericPassword,
     ]
-    let status = withEntitlementFallback { useDataProtection in
+    for useDataProtection in [true, false] {
       var query = query
       query[kSecUseDataProtectionKeychain] = useDataProtection
-      return SecItemDelete(query as CFDictionary)
-    }
-    guard status == errSecSuccess || status == errSecItemNotFound else {
-      throw KeychainError.unexpectedStatus(status)
+      let status = SecItemDelete(query as CFDictionary)
+      let isAcceptable =
+        status == errSecSuccess || status == errSecItemNotFound || status == errSecMissingEntitlement
+      guard isAcceptable else { throw KeychainError.unexpectedStatus(status) }
     }
   }
 

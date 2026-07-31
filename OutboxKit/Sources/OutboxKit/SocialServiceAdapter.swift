@@ -24,8 +24,19 @@ public enum PublishOutcome: Equatable, Sendable {
   case skipped(reason: String)
 }
 
-public enum AdapterError: Error, Equatable {
+public enum AdapterError: Error, Equatable, LocalizedError {
   case httpError(statusCode: Int, message: String)
   case invalidResponse
   case missingCredential
+
+  public var errorDescription: String? {
+    switch self {
+    case .httpError(let statusCode, let message):
+      "The server replied with HTTP \(statusCode): \(message)"
+    case .invalidResponse:
+      "The server returned a response that couldn't be understood."
+    case .missingCredential:
+      "No stored credential for this account. Remove the account and add it again."
+    }
+  }
 }

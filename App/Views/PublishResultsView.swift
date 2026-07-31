@@ -8,9 +8,12 @@ struct PublishResultsView: View {
 
   var body: some View {
     NavigationStack {
-      List(Array(results.enumerated()), id: \.offset) { _, result in
-        row(for: result)
+      List {
+        ForEach(results.indices, id: \.self) { index in
+          row(for: results[index])
+        }
       }
+      .textSelection(.enabled)
       .navigationTitle("Published")
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {
@@ -19,6 +22,9 @@ struct PublishResultsView: View {
       }
     }
     .presentationDetents([.medium, .large])
+    #if os(macOS)
+      .frame(minWidth: 480, minHeight: 280)
+    #endif
   }
 
   @ViewBuilder
@@ -34,7 +40,6 @@ struct PublishResultsView: View {
         Text(fileURL.path)
           .font(.caption.monospaced())
           .foregroundStyle(.secondary)
-          .textSelection(.enabled)
       }
     }
     .padding(.vertical, 4)

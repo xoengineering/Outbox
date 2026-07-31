@@ -25,3 +25,6 @@ All notable changes to Outbox are documented here.
   works; fall back to the login keychain in unsigned builds.
 - Show the real OSStatus message in Keychain errors.
 - Make text in the add-account modals selectable.
+- Fix the publish results sheet rendering no rows; make its text selectable.
+- Give adapter errors readable descriptions (HTTP status + server message).
+- Keychain reads/deletes now check both the data-protection and login keychains.
