@@ -3,10 +3,10 @@ import SwiftUI
 
 /// A toggleable endpoint: brand glyph, handle, and live remaining-character count.
 ///
-/// Toggled off: gray background, brand-colored icon.
-/// Toggled on: brand-colored background, white icon.
-/// Toggled on but over the limit: the brand color screens back to 10% so the
-/// red count and outline stay legible.
+/// Toggled off: gray background, icon and text screened to 50%.
+/// Toggled on: solid brand background, white icon and text.
+/// Toggled on but over the limit: brand background screened to 10%, icon and
+/// handle at 50%, so the full-strength red count and outline carry the warning.
 struct EndpointChipView: View {
   var account: Account
   var isEnabled: Bool
@@ -21,9 +21,11 @@ struct EndpointChipView: View {
           size: 13,
           tint: isSolidBrand ? account.network.brandContrastColor : nil
         )
+        .opacity(isSolidBrand ? 1 : 0.5)
         Text(account.handle)
           .lineLimit(1)
           .foregroundStyle(isSolidBrand ? account.network.brandContrastColor : AnyShapeStyle(.primary))
+          .opacity(isSolidBrand ? 1 : 0.5)
         Text("\(remaining)")
           .monospacedDigit()
           .foregroundStyle(countStyle)
