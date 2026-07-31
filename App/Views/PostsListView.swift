@@ -44,6 +44,7 @@ struct PostsListView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
       }
+      .background(.bar)
     }
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
