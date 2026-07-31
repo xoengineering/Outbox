@@ -3,12 +3,21 @@ import SwiftUI
 
 /// Second column: the archive, newest first, filtered by sidebar selection and search.
 struct PostsListView: View {
+  @AppStorage("LastFocusedColumn") private var lastFocusedColumn = "accounts"
   @Environment(AppModel.self) private var model
+  @FocusState private var isFocused: Bool
 
   var body: some View {
     @Bindable var model = model
     List(model.visiblePosts, selection: $model.selectedPostID) { post in
       PostRowView(post: post)
+    }
+    .focused($isFocused)
+    .onChange(of: isFocused) {
+      if isFocused { lastFocusedColumn = "posts" }
+    }
+    .task {
+      if lastFocusedColumn == "posts" { isFocused = true }
     }
     .navigationTitle(model.selectedAccountLabel)
     .toolbar {

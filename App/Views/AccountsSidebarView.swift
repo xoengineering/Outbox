@@ -7,6 +7,7 @@ import SwiftUI
 /// animate structural row changes, and the accordion feel needs real transitions.
 /// Keyboard: ↑/↓ move selection, → expands an account row, ← collapses it.
 struct AccountsSidebarView: View {
+  @AppStorage("LastFocusedColumn") private var lastFocusedColumn = "accounts"
   @Environment(AppModel.self) private var model
   @State private var expandedAccountIDs: Set<UUID> = []
   @FocusState private var isFocused: Bool
@@ -47,6 +48,12 @@ struct AccountsSidebarView: View {
       .focusable()
       .focusEffectDisabled()
       .focused($isFocused)
+      .onChange(of: isFocused) {
+        if isFocused { lastFocusedColumn = "accounts" }
+      }
+      .task {
+        if lastFocusedColumn == "accounts" { isFocused = true }
+      }
       #if os(macOS)
         .onMoveCommand { direction in
           handleMove(direction, proxy: proxy)
