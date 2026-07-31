@@ -19,12 +19,8 @@ struct AccountsSidebarView: View {
           DisclosureGroup {
             statusRows(accountID: account.id)
           } label: {
-            Label {
-              Text(account.handle)
-            } icon: {
-              NetworkIconView(network: account.network)
-            }
-            .tag(AppModel.SidebarSelection(accountID: account.id, isAccountRow: true))
+            SidebarAccountRowView(account: account)
+              .tag(AppModel.SidebarSelection(accountID: account.id, isAccountRow: true))
           }
         }
       }

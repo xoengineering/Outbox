@@ -19,6 +19,7 @@ struct ContentView: View {
     }
     .task {
       await model.reloadPosts()
+      await model.refreshProfiles()
     }
     #if os(macOS)
       .navigationSubtitle(model.selectedAccountLabel)

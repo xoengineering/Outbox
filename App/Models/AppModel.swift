@@ -51,6 +51,26 @@ import OutboxKit
     accounts.append(account)
     enabledAccountIDs.insert(account.id)
     try accountsRepository.save(accounts)
+    Task { await refreshProfiles() }
+  }
+
+  /// Fills in display names and avatars from each network; failures are ignored.
+  func refreshProfiles() async {
+    let fetcher = ProfileFetcher()
+    var changed = false
+    for account in accounts where account.network != .threads {
+      guard let credential = keychain.credential(for: account.id),
+        let profile = try? await fetcher.profile(for: account, credential: credential),
+        let index = accounts.firstIndex(where: { $0.id == account.id })
+      else { continue }
+
+      if accounts[index].avatarURL != profile.avatarURL || accounts[index].displayName != profile.displayName {
+        accounts[index].avatarURL = profile.avatarURL
+        accounts[index].displayName = profile.displayName
+        changed = true
+      }
+    }
+    if changed { try? accountsRepository.save(accounts) }
   }
 
   func remove(_ account: Account) {
