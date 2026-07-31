@@ -32,6 +32,11 @@ struct PostsListView: View {
       HStack(spacing: 6) {
         statusPill("Drafts", status: .draft, color: .orange)
         statusPill("Published", status: .published, color: .green)
+        Divider()
+          .frame(height: 14)
+        ForEach(Network.allCases) { network in
+          networkPill(network)
+        }
         Spacer()
       }
       .padding(.horizontal, 10)
@@ -78,5 +83,32 @@ struct PostsListView: View {
     }
     .buttonStyle(.plain)
     .help(status == .draft ? "Show only drafts" : "Show only published posts")
+  }
+
+  /// A filter pill per network, in its brand color when active.
+  private func networkPill(_ network: Network) -> some View {
+    let isOn = model.networkFilters.contains(network)
+    return Button {
+      if isOn {
+        model.networkFilters.remove(network)
+      } else {
+        model.networkFilters.insert(network)
+      }
+    } label: {
+      HStack(spacing: 3) {
+        NetworkIconView(network: network, size: 9, tint: isOn ? nil : AnyShapeStyle(.secondary))
+        Text(network.displayName)
+          .font(.caption2.weight(.semibold))
+      }
+      .padding(.horizontal, 6)
+      .padding(.vertical, 2)
+      .background(
+        isOn ? AnyShapeStyle(network.brandColor.opacity(0.15)) : AnyShapeStyle(.quaternary),
+        in: Capsule()
+      )
+      .foregroundStyle(isOn ? network.brandColor : AnyShapeStyle(.secondary))
+    }
+    .buttonStyle(.plain)
+    .help("Show only \(network.displayName) posts")
   }
 }

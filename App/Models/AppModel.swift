@@ -36,7 +36,8 @@ import OutboxKit
   var posts: [StoredPost] = []
   var searchText = ""
   var selectedPostID: URL?
-  /// Toolbar toggle filters on the posts list; empty means no status filtering.
+  /// Pill toggle filters on the posts list; empty sets mean no filtering.
+  var networkFilters: Set<Network> = []
   var statusFilters: Set<StoredPost.Status> = []
   var sidebarSelection: SidebarSelection? = SidebarSelection()
   let archiveFolder = ArchiveFolder()
@@ -128,6 +129,9 @@ import OutboxKit
     }
     if !statusFilters.isEmpty {
       filtered = filtered.filter { statusFilters.contains($0.status) }
+    }
+    if !networkFilters.isEmpty {
+      filtered = filtered.filter { networkFilters.contains($0.file.metadata.network) }
     }
     let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     if !query.isEmpty {
