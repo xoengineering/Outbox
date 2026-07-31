@@ -12,6 +12,7 @@ struct SidebarAccountRowView: View {
       VStack(alignment: .leading, spacing: 1) {
         Text(account.displayName ?? account.handle)
           .lineLimit(1)
+          .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
         HStack(spacing: 4) {
           NetworkIconView(
             network: account.network,
@@ -22,7 +23,7 @@ struct SidebarAccountRowView: View {
             .lineLimit(1)
         }
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(isSelected ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(.secondary))
       }
     }
     .padding(.vertical, 2)
