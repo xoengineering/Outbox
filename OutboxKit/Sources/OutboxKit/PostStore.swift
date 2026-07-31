@@ -40,6 +40,7 @@ public struct PostStore: Sendable {
   }
 
   /// Reads every parseable post in the archive, newest first.
+  ///
   /// Files that fail to parse are skipped, never destroyed.
   public func allPosts() throws -> [StoredPost] {
     guard FileManager.default.fileExists(atPath: baseDirectory.path) else { return [] }

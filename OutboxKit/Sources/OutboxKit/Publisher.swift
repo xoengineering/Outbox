@@ -60,7 +60,8 @@ public struct Publisher: Sendable {
       let file = draftFile(body: body, compositionID: compositionID, replyURL: replyURL, target: target)
       do {
         let fileURL = try store.save(file)
-        return TargetResult(account: target.account, fileURL: fileURL, outcome: .success(.skipped(reason: "Saved as draft.")))
+        return TargetResult(
+          account: target.account, fileURL: fileURL, outcome: .success(.skipped(reason: "Saved as draft.")))
       } catch {
         return TargetResult(account: target.account, fileURL: nil, outcome: .failure(error))
       }

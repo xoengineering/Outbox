@@ -11,7 +11,7 @@ struct EndpointChipView: View {
   var body: some View {
     Button(action: toggle) {
       HStack(spacing: 6) {
-        Image(systemName: symbolName)
+        Image(systemName: account.network.symbolName)
         Text(account.handle)
           .lineLimit(1)
         Text("\(remaining)")
@@ -34,14 +34,6 @@ struct EndpointChipView: View {
   }
 
   private var isOverLimit: Bool { remaining < 0 }
-
-  private var symbolName: String {
-    switch account.network {
-    case .bluesky: "cloud"
-    case .mastodon: "burst"
-    case .threads: "at"
-    }
-  }
 
   private var chipBackground: AnyShapeStyle {
     isEnabled ? AnyShapeStyle(.tint.opacity(0.15)) : AnyShapeStyle(.quaternary)

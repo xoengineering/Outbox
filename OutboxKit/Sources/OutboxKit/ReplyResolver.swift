@@ -114,14 +114,14 @@ public struct ReplyResolver: ReplyResolving {
   private struct GetRecordResponse: Decodable {
     var cid: String
     var uri: String
-    var value: Value
+    var value: RecordValue
+  }
 
-    struct Value: Decodable {
-      var reply: Reply?
+  private struct RecordValue: Decodable {
+    var reply: RecordValueReply?
+  }
 
-      struct Reply: Decodable {
-        var root: RecordRef?
-      }
-    }
+  private struct RecordValueReply: Decodable {
+    var root: RecordRef?
   }
 }

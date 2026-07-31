@@ -2,11 +2,27 @@ import Foundation
 import Observation
 import OutboxKit
 
-/// App-wide state: configured accounts, which endpoints are toggled on,
-/// and the wiring between the archive folder, Keychain, and Publisher.
+/// App-wide state: configured accounts, the loaded archive, selection, and the
+/// wiring between the archive folder, Keychain, and Publisher.
 @MainActor @Observable final class AppModel {
+  enum SidebarSelection: Hashable {
+    case account(UUID)
+    case all
+  }
+
+  enum DetailMode: Equatable {
+    case browse
+    case compose(replyTo: URL?)
+    case edit(StoredPost)
+  }
+
   var accounts: [Account] = []
+  var detailMode: DetailMode = .browse
   var enabledAccountIDs: Set<UUID> = []
+  var posts: [StoredPost] = []
+  var searchText = ""
+  var selectedPostID: URL?
+  var sidebarSelection: SidebarSelection? = .all
   let archiveFolder = ArchiveFolder()
 
   private let accountsRepository: AccountsRepository
@@ -17,6 +33,8 @@ import OutboxKit
     accounts = accountsRepository.load()
     enabledAccountIDs = Set(accounts.map(\.id))
   }
+
+  // MARK: - Accounts
 
   var enabledAccounts: [Account] {
     accounts.filter { enabledAccountIDs.contains($0.id) }
@@ -33,6 +51,7 @@ import OutboxKit
     try? keychain.delete(for: account.id)
     accounts.removeAll { $0.id == account.id }
     enabledAccountIDs.remove(account.id)
+    if sidebarSelection == .account(account.id) { sidebarSelection = .all }
     try? accountsRepository.save(accounts)
   }
 
@@ -44,20 +63,126 @@ import OutboxKit
     }
   }
 
-  func publish(body: String) async -> [Publisher.TargetResult] {
-    let targets = enabledAccounts.map { account in
+  func account(for post: StoredPost) -> Account? {
+    accounts.first {
+      $0.handle == post.file.metadata.account && $0.network == post.file.metadata.network
+    }
+  }
+
+  // MARK: - Archive
+
+  func reloadPosts() async {
+    let loaded = try? await archiveFolder.withAccess { baseURL in
+      try PostStore(baseDirectory: baseURL).allPosts()
+    }
+    posts = loaded ?? []
+  }
+
+  var visiblePosts: [StoredPost] {
+    var filtered = posts
+    if case .account(let accountID) = sidebarSelection,
+      let account = accounts.first(where: { $0.id == accountID })
+    {
+      filtered = filtered.filter {
+        $0.file.metadata.account == account.handle && $0.file.metadata.network == account.network
+      }
+    }
+    let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !query.isEmpty {
+      filtered = filtered.filter { $0.file.body.localizedCaseInsensitiveContains(query) }
+    }
+    return filtered
+  }
+
+  var selectedPost: StoredPost? {
+    posts.first { $0.id == selectedPostID }
+  }
+
+  var selectedAccountLabel: String {
+    if case .account(let accountID) = sidebarSelection,
+      let account = accounts.first(where: { $0.id == accountID })
+    {
+      return account.handle
+    }
+    return "All Posts"
+  }
+
+  // MARK: - Composing
+
+  func startNewPost() {
+    detailMode = .compose(replyTo: nil)
+  }
+
+  /// Starts a reply to a published post: targets that post's account and
+  /// prefills the reply URL with its permalink.
+  func startReply(to post: StoredPost) {
+    if let account = account(for: post) {
+      enabledAccountIDs = [account.id]
+    }
+    detailMode = .compose(replyTo: post.file.metadata.remoteURL)
+  }
+
+  // MARK: - Publishing
+
+  func publish(body: String, replyTo replyURL: URL?) async -> [Publisher.TargetResult] {
+    let targets = enabledTargets
+    let results = await archiveFolder.withAccess { baseURL in
+      await makePublisher(baseURL: baseURL).publish(body: body, replyTo: replyURL, to: targets)
+    }
+    await reloadPosts()
+    return results
+  }
+
+  func saveDrafts(body: String, replyTo replyURL: URL?) async {
+    let targets = enabledTargets
+    _ = await archiveFolder.withAccess { baseURL in
+      makePublisher(baseURL: baseURL).saveDrafts(body: body, replyTo: replyURL, for: targets)
+    }
+    await reloadPosts()
+  }
+
+  func publishExisting(_ post: StoredPost) async -> Publisher.TargetResult? {
+    guard let account = account(for: post) else { return nil }
+    let target = Publisher.Target(account: account, credential: keychain.credential(for: account.id) ?? .none)
+    let result = await archiveFolder.withAccess { baseURL in
+      await makePublisher(baseURL: baseURL).publishExisting(post, target: target)
+    }
+    await reloadPosts()
+    return result
+  }
+
+  func updateBody(of post: StoredPost, to newBody: String) async throws {
+    var file = post.file
+    file.body = newBody
+    try await archiveFolder.withAccess { baseURL in
+      try PostStore(baseDirectory: baseURL).save(file, to: post.fileURL)
+    }
+    await reloadPosts()
+  }
+
+  func deletePost(_ post: StoredPost) async {
+    try? await archiveFolder.withAccess { baseURL in
+      try PostStore(baseDirectory: baseURL).delete(post)
+    }
+    if selectedPostID == post.id { selectedPostID = nil }
+    detailMode = .browse
+    await reloadPosts()
+  }
+
+  private var enabledTargets: [Publisher.Target] {
+    enabledAccounts.map { account in
       Publisher.Target(account: account, credential: keychain.credential(for: account.id) ?? .none)
     }
-    return await archiveFolder.withAccess { baseURL in
-      let publisher = Publisher(
-        adapters: [
-          .bluesky: BlueskyAdapter(),
-          .mastodon: MastodonAdapter(),
-          .threads: ThreadsAdapter(),
-        ],
-        store: PostStore(baseDirectory: baseURL)
-      )
-      return await publisher.publish(body: body, to: targets)
-    }
+  }
+
+  private func makePublisher(baseURL: URL) -> Publisher {
+    Publisher(
+      adapters: [
+        .bluesky: BlueskyAdapter(),
+        .mastodon: MastodonAdapter(),
+        .threads: ThreadsAdapter(),
+      ],
+      store: PostStore(baseDirectory: baseURL)
+    )
   }
 }

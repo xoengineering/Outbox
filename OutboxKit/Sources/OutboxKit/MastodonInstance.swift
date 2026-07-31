@@ -20,17 +20,17 @@ public struct MastodonInstance: Sendable {
 
   private struct InstanceResponse: Decodable {
     var configuration: Configuration?
+  }
 
-    struct Configuration: Decodable {
-      var statuses: Statuses?
+  private struct Configuration: Decodable {
+    var statuses: Statuses?
+  }
 
-      struct Statuses: Decodable {
-        var maxCharacters: Int?
+  private struct Statuses: Decodable {
+    var maxCharacters: Int?
 
-        enum CodingKeys: String, CodingKey {
-          case maxCharacters = "max_characters"
-        }
-      }
+    enum CodingKeys: String, CodingKey {
+      case maxCharacters = "max_characters"
     }
   }
 }

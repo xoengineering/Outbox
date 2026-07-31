@@ -8,5 +8,6 @@ identifier_name:
 nesting:
   type_level: 2
 disabled_rules:
+  - opening_brace # swift-format owns formatting; it wraps braces after multiline conditions
   - todo
   - trailing_comma # swift-format owns formatting and inserts trailing commas
