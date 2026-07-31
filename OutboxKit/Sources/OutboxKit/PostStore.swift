@@ -1,7 +1,8 @@
 import Foundation
 
-/// Writes post files into the on-disk archive:
-/// `<base>/<Network>/<account>/<YYYY>/<MM>/<DD>/<slug>-<NthOfDay>.md`
+/// Writes post files into the on-disk archive.
+///
+/// Layout: `<base>/<Network>/<account>/<YYYY>/<MM>/<DD>/<slug>-<NthOfDay>.md`
 public struct PostStore: Sendable {
   public var baseDirectory: URL
   public var timeZone: TimeZone
@@ -11,7 +12,9 @@ public struct PostStore: Sendable {
     self.timeZone = timeZone
   }
 
-  /// Saves a new post file, deriving its path from metadata and content. Returns the file's URL.
+  /// Saves a new post file, deriving its path from metadata and content.
+  ///
+  /// - Returns: The saved file's URL.
   @discardableResult
   public func save(_ file: PostFile) throws -> URL {
     let directory = dayDirectory(for: file.metadata)
@@ -41,7 +44,8 @@ public struct PostStore: Sendable {
     calendar.timeZone = timeZone
     let components = calendar.dateComponents([.year, .month, .day], from: metadata.createdAt)
 
-    return baseDirectory
+    return
+      baseDirectory
       .appendingPathComponent(metadata.network.folderName, isDirectory: true)
       .appendingPathComponent(metadata.account, isDirectory: true)
       .appendingPathComponent(String(format: "%04d", components.year!), isDirectory: true)

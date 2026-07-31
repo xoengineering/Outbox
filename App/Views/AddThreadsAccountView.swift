@@ -1,7 +1,9 @@
 import OutboxKit
 import SwiftUI
 
-/// Adds a Threads endpoint. Publishing to Threads is a stub for now:
+/// Adds a Threads endpoint.
+///
+/// Publishing to Threads is a stub for now:
 /// posts are archived locally under Threads/, nothing is sent to the network.
 struct AddThreadsAccountView: View {
   @Environment(AppModel.self) private var model

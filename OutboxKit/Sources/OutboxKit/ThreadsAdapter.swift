@@ -1,4 +1,6 @@
-/// Stub for Threads. The UI shows the endpoint, but publishing no-ops:
+/// Stub for Threads.
+///
+/// The UI shows the endpoint, but publishing no-ops:
 /// the local file is still written; nothing is sent anywhere.
 public struct ThreadsAdapter: SocialServiceAdapter {
   public init() {}

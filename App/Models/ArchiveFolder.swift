@@ -2,7 +2,9 @@ import Foundation
 import Observation
 import OutboxKit
 
-/// Where the local post archive lives. Defaults to the app's Documents folder;
+/// Where the local post archive lives.
+///
+/// Defaults to the app's Documents folder;
 /// on macOS the user can pick any folder, remembered via a security-scoped bookmark.
 @MainActor @Observable final class ArchiveFolder {
   private static let bookmarkDefaultsKey = "ArchiveFolderBookmark"

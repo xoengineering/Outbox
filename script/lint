@@ -5,5 +5,5 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-swift format --lint --recursive App OutboxKit
+swift format lint --recursive App OutboxKit
 swiftlint lint --quiet

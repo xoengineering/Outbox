@@ -1,6 +1,7 @@
 import Foundation
 
 /// Persists the list of configured accounts as JSON.
+///
 /// Credentials never live here — they belong to `KeychainStore`.
 public struct AccountsRepository: Sendable {
   public var fileURL: URL

@@ -33,8 +33,10 @@ public struct Publisher: Sendable {
     public var outcome: Result<PublishOutcome, any Error>
   }
 
-  /// Publishes one body of text to every target. A failure on one target never
-  /// blocks the others, and the local file always exists even when the network fails.
+  /// Publishes one body of text to every target.
+  ///
+  /// A failure on one target never blocks the others, and the local file
+  /// always exists even when the network fails.
   public func publish(body: String, to targets: [Target]) async -> [TargetResult] {
     var results: [TargetResult] = []
     for target in targets {

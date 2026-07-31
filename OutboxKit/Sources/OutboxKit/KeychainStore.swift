@@ -2,6 +2,7 @@ import Foundation
 import Security
 
 /// Stores per-account credentials in the data-protection Keychain.
+///
 /// Keys are account UUIDs; values are JSON-encoded `Credential`s.
 public struct KeychainStore: Sendable {
   public var service: String

@@ -5,5 +5,8 @@ included:
 line_length: 125
 identifier_name:
   min_length: 2
+nesting:
+  type_level: 2
 disabled_rules:
   - todo
+  - trailing_comma # swift-format owns formatting and inserts trailing commas

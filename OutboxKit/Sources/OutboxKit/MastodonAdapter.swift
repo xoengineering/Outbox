@@ -23,7 +23,7 @@ public struct MastodonAdapter: SocialServiceAdapter {
     guard (200..<300).contains(response.statusCode) else {
       throw AdapterError.httpError(
         statusCode: response.statusCode,
-        message: String(decoding: data, as: UTF8.self)
+        message: String(bytes: data, encoding: .utf8) ?? ""
       )
     }
 
