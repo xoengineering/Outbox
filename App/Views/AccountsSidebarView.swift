@@ -19,8 +19,11 @@ struct AccountsSidebarView: View {
           DisclosureGroup {
             statusRows(accountID: account.id)
           } label: {
-            SidebarAccountRowView(account: account)
-              .tag(AppModel.SidebarSelection(accountID: account.id, isAccountRow: true))
+            SidebarAccountRowView(
+              account: account,
+              isSelected: model.sidebarSelection == accountRowSelection(for: account)
+            )
+            .tag(accountRowSelection(for: account))
           }
         }
       }
@@ -49,6 +52,10 @@ struct AccountsSidebarView: View {
         SettingsRootView()
       }
     #endif
+  }
+
+  private func accountRowSelection(for account: Account) -> AppModel.SidebarSelection {
+    AppModel.SidebarSelection(accountID: account.id, isAccountRow: true)
   }
 
   @ViewBuilder

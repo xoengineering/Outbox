@@ -4,6 +4,7 @@ import SwiftUI
 /// An account in the sidebar: avatar, display name, and network + handle beneath.
 struct SidebarAccountRowView: View {
   var account: Account
+  var isSelected = false
 
   var body: some View {
     HStack(spacing: 8) {
@@ -13,6 +14,8 @@ struct SidebarAccountRowView: View {
           .lineLimit(1)
         HStack(spacing: 4) {
           NetworkIconView(network: account.network, size: 10)
+            .padding(2)
+            .background(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.clear), in: Circle())
           Text(account.handle)
             .lineLimit(1)
         }
@@ -21,6 +24,12 @@ struct SidebarAccountRowView: View {
       }
     }
     .padding(.vertical, 2)
+    .padding(.leading, 4)
+    // DisclosureGroup aligns its chevron to the label's first text baseline;
+    // remap it to the row's vertical center so the chevron centers on both lines.
+    .alignmentGuide(.firstTextBaseline) { dimensions in
+      dimensions[VerticalAlignment.center]
+    }
   }
 
   @ViewBuilder
