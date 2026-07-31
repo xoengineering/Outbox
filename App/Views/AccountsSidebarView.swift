@@ -113,14 +113,20 @@ struct AccountsSidebarView: View {
         }
         model.sidebarSelection = ordered[nextIndex]
         proxy.scrollTo(ordered[nextIndex])
-      case .left, .right:
+      case .right:
         guard let selection = model.sidebarSelection, selection.isAccountRow,
           let accountID = selection.accountID
         else { return }
-        if direction == .right {
-          expandedAccountIDs.insert(accountID)
-        } else {
+        expandedAccountIDs.insert(accountID)
+      case .left:
+        guard let selection = model.sidebarSelection, let accountID = selection.accountID else { return }
+        if selection.isAccountRow {
           expandedAccountIDs.remove(accountID)
+        } else {
+          // Finder-style: from a child row, jump up to the parent account row.
+          let parent = AppModel.SidebarSelection(accountID: accountID, isAccountRow: true)
+          model.sidebarSelection = parent
+          proxy.scrollTo(parent)
         }
       @unknown default:
         break
@@ -134,6 +140,7 @@ struct AccountsSidebarView: View {
   private func accountRow(for account: Account) -> some View {
     let selection = AppModel.SidebarSelection(accountID: account.id, isAccountRow: true)
     let isSelected = model.sidebarSelection == selection
+    let emphasized = isSelected && isFocused
     return HStack(spacing: 6) {
       Button {
         if !expandedAccountIDs.insert(account.id).inserted {
@@ -142,7 +149,7 @@ struct AccountsSidebarView: View {
       } label: {
         Image(systemName: "chevron.right")
           .font(.caption.weight(.semibold))
-          .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+          .foregroundStyle(emphasized ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
           .rotationEffect(.degrees(expandedAccountIDs.contains(account.id) ? 90 : 0))
           .frame(width: 12)
       }
@@ -152,7 +159,7 @@ struct AccountsSidebarView: View {
       Button {
         select(selection)
       } label: {
-        SidebarAccountRowView(account: account, isSelected: isSelected)
+        SidebarAccountRowView(account: account, isSelected: emphasized)
           .frame(maxWidth: .infinity, alignment: .leading)
           .contentShape(Rectangle())
       }
@@ -167,6 +174,7 @@ struct AccountsSidebarView: View {
   private func statusRow(accountID: UUID?, status: StoredPost.Status?, indented: Bool) -> some View {
     let selection = AppModel.SidebarSelection(accountID: accountID, status: status)
     let isSelected = model.sidebarSelection == selection
+    let emphasized = isSelected && isFocused
     let (title, symbol) =
       switch status {
       case .published: ("Published", "paperplane")
@@ -177,7 +185,7 @@ struct AccountsSidebarView: View {
       select(selection)
     } label: {
       Label(title, systemImage: symbol)
-        .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+        .foregroundStyle(emphasized ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
     }
@@ -195,8 +203,16 @@ struct AccountsSidebarView: View {
     isFocused = true
   }
 
+  /// Accent highlight when the sidebar owns focus, quiet gray when it doesn't.
   private func rowBackground(isSelected: Bool) -> some View {
-    RoundedRectangle(cornerRadius: 6)
-      .fill(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.clear))
+    let fill: AnyShapeStyle =
+      if !isSelected {
+        AnyShapeStyle(.clear)
+      } else if isFocused {
+        AnyShapeStyle(.tint)
+      } else {
+        AnyShapeStyle(.quaternary)
+      }
+    return RoundedRectangle(cornerRadius: 6).fill(fill)
   }
 }

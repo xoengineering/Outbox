@@ -12,6 +12,7 @@ struct PostFormView: View {
   let mode: Mode
 
   @Environment(AppModel.self) private var model
+  @FocusState private var isContentFocused: Bool
   @State private var confirmingDelete = false
   @State private var errorMessage: String?
   @State private var isWorking = false
@@ -41,6 +42,7 @@ struct PostFormView: View {
 
       TextEditor(text: $text)
         .font(.title3)
+        .focused($isContentFocused)
         .scrollContentBackground(.hidden)
         .padding(8)
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
@@ -60,6 +62,9 @@ struct PostFormView: View {
     }
     .padding()
     .navigationTitle(isNew ? "New Post" : "Edit Post")
+    .task {
+      isContentFocused = true
+    }
     .sheet(item: $publishRun, onDismiss: finishAfterPublish) { run in
       PublishResultsView(results: run.results)
     }
