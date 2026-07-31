@@ -40,13 +40,7 @@ struct AccountsSettingsView: View {
       }
 
       Section("Add Account") {
-        Picker("Network", selection: $newNetwork) {
-          ForEach(Network.allCases) { network in
-            Text(network.displayName).tag(network)
-          }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
+        NetworkPickerView(selection: $newNetwork)
 
         switch newNetwork {
         case .bluesky:
