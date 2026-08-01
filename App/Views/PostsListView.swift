@@ -69,14 +69,6 @@ struct PostsListView: View {
       }
       .background(.bar)
     }
-    .toolbar {
-      ToolbarItem(placement: .primaryAction) {
-        Button("New Post", systemImage: "square.and.pencil") {
-          model.startNewPost()
-        }
-        .keyboardShortcut("n", modifiers: .command)
-      }
-    }
     .onChange(of: model.selectedPostID) {
       model.detailMode = .browse
     }
