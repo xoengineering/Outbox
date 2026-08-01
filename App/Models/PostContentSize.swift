@@ -20,11 +20,11 @@ enum PostContentSize: String, CaseIterable, Identifiable {
 
   var font: Font {
     switch self {
-    case .large: .system(size: 18)
-    case .medium: .system(size: 15)
-    case .small: .system(size: 13)
-    case .xl: .system(size: 22)
-    case .xs: .system(size: 11)
+    case .large: .system(size: 22)
+    case .medium: .system(size: 18)
+    case .small: .system(size: 15)
+    case .xl: .system(size: 26)
+    case .xs: .system(size: 13)
     }
   }
 }

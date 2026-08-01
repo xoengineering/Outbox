@@ -20,9 +20,10 @@ struct PostDetailView: View {
 
         replyLinks
 
-        metaLine
-
-        copies
+        VStack(alignment: .leading, spacing: 8) {
+          metaLine
+          copies
+        }
 
         extractedTokens
       }
@@ -60,17 +61,15 @@ struct PostDetailView: View {
         .font(.caption)
         .foregroundStyle(.secondary)
       Spacer()
-      statusBadge
+      if post.status == .draft {
+        Text("Draft")
+          .font(.caption.weight(.semibold))
+          .padding(.horizontal, 8)
+          .padding(.vertical, 3)
+          .background(post.status.color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
+          .foregroundStyle(post.status.color)
+      }
     }
-  }
-
-  private var statusBadge: some View {
-    Text(post.status == .published ? "Published" : "Draft")
-      .font(.caption.weight(.semibold))
-      .padding(.horizontal, 8)
-      .padding(.vertical, 3)
-      .background(post.status.color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
-      .foregroundStyle(post.status.color)
   }
 
   @ViewBuilder
@@ -170,7 +169,9 @@ struct PostDetailView: View {
     if extracted != ContentExtractor.Extracted() {
       VStack(alignment: .leading, spacing: 10) {
         if !extracted.hashtags.isEmpty {
-          tokenRow(title: "Hashtags", tokens: extracted.hashtags, color: Palette.hashtag)
+          tokenRow(title: "Hashtags", tokens: extracted.hashtags, color: Palette.hashtag) { tag in
+            model.searchText = tag
+          }
         }
         if !extracted.mentions.isEmpty {
           tokenRow(title: "Mentions", tokens: extracted.mentions, color: Palette.mention)
@@ -191,7 +192,12 @@ struct PostDetailView: View {
     }
   }
 
-  private func tokenRow(title: String, tokens: [String], color: Color) -> some View {
+  private func tokenRow(
+    title: String,
+    tokens: [String],
+    color: Color,
+    action: ((String) -> Void)? = nil
+  ) -> some View {
     VStack(alignment: .leading, spacing: 4) {
       Text(title)
         .font(.caption.weight(.semibold))
@@ -199,15 +205,29 @@ struct PostDetailView: View {
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 6) {
           ForEach(tokens, id: \.self) { token in
-            Text(token)
-              .font(.callout)
-              .padding(.horizontal, 8)
-              .padding(.vertical, 3)
-              .background(color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
-              .foregroundStyle(color)
+            if let action {
+              Button {
+                action(token)
+              } label: {
+                tokenChip(token, color: color)
+              }
+              .buttonStyle(.plain)
+              .help("Show posts containing \(token)")
+            } else {
+              tokenChip(token, color: color)
+            }
           }
         }
       }
     }
+  }
+
+  private func tokenChip(_ token: String, color: Color) -> some View {
+    Text(token)
+      .font(.callout)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 3)
+      .background(color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
+      .foregroundStyle(color)
   }
 }
