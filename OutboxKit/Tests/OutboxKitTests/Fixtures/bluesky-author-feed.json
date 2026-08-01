@@ -1,0 +1,37 @@
+{
+  "feed": [
+    {
+      "post": {
+        "uri": "at://did:plc:abc123xyz456/app.bsky.feed.post/3mrxphbwwuf22",
+        "cid": "bafyreib2rxk3rw6kzobqg3vhluvyrl3sf4vmpxfqv4y2v5cdlmtzvkg24m",
+        "author": {
+          "did": "did:plc:abc123xyz456",
+          "handle": "veganstraightedge.com"
+        },
+        "record": {
+          "$type": "app.bsky.feed.post",
+          "createdAt": "2026-07-31T19:39:57Z",
+          "text": "Two by two, hands of blue 🙌🏻🟦"
+        }
+      }
+    },
+    {
+      "post": {
+        "uri": "at://did:plc:someoneelse/app.bsky.feed.post/3reposted",
+        "cid": "bafyreirepost",
+        "author": {
+          "did": "did:plc:someoneelse",
+          "handle": "someoneelse.com"
+        },
+        "record": {
+          "$type": "app.bsky.feed.post",
+          "createdAt": "2026-07-30T10:00:00Z",
+          "text": "A repost that should be excluded"
+        }
+      },
+      "reason": {
+        "$type": "app.bsky.feed.defs#reasonRepost"
+      }
+    }
+  ]
+}
