@@ -115,8 +115,9 @@ public struct Publisher: Sendable {
     return Output(fileURL: stored.fileURL, results: results)
   }
 
-  /// Edits the canonical body and pushes the change to every copy whose network
-  /// supports edits. Copies that can't be edited keep their live text recorded
+  /// Edits the canonical body and pushes the change to every copy whose network supports edits.
+  ///
+  /// Copies that can't be edited keep their live text recorded
   /// as a per-copy override, so the file reflects what's actually up.
   public func editSyndicated(_ stored: StoredPost, newBody: String, to targets: [Target]) async -> Output {
     var file = stored.file
