@@ -10,20 +10,10 @@ struct PostRowView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      HStack(alignment: .top) {
-        Text(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
-          .font(.title3)
-          .lineLimit(2)
-        Spacer()
-        if post.status == .draft {
-          Text("Draft")
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(post.status.color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
-            .foregroundStyle(post.status.color)
-        }
-      }
+      Text(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
+        .font(.title3)
+        .lineLimit(2)
+        .frame(maxWidth: .infinity, alignment: .leading)
       HStack(spacing: 4) {
         AvatarNetworkPairView(
           avatarURL: avatarURL,
@@ -32,7 +22,16 @@ struct PostRowView: View {
           size: 16
         )
         Spacer()
-        Text(post.file.metadata.createdAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+        if post.status == .draft {
+          Text("Draft")
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(post.status.color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
+            .foregroundStyle(post.status.color)
+        } else {
+          Text(post.file.metadata.createdAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+        }
       }
       .font(.caption)
       .foregroundStyle(.tertiary)
