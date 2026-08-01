@@ -34,9 +34,6 @@ struct ContentView: View {
       .hidden()
       KeyboardCommandsView()
     }
-    #if os(macOS)
-      .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-    #endif
     .task {
       await model.reloadPosts()
       if lastFocusedColumn == "search" {
