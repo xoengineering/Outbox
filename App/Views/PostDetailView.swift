@@ -4,20 +4,23 @@ import SwiftUI
 /// The "show" view for one Post: canonical content, its copies on networks,
 /// pending targets, and extracted tokens.
 struct PostDetailView: View {
+  @AppStorage(DateFormatChoice.defaultsKey) private var dateFormat = DateFormatChoice.monthDayYear
+  @AppStorage(PostContentSize.defaultsKey) private var contentSize = PostContentSize.medium
   @Environment(AppModel.self) private var model
   var post: StoredPost
 
   var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 16) {
-        header
-
+      VStack(alignment: .leading, spacing: 24) {
         Text(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
-          .font(.title3)
+          .font(contentSize.font)
           .textSelection(.enabled)
           .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.top, 32)
 
         replyLinks
+
+        metaLine
 
         copies
 
@@ -51,16 +54,13 @@ struct PostDetailView: View {
     }
   }
 
-  private var header: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      HStack {
-        Text("Written \(post.file.metadata.createdAt, format: .dateTime)")
-          .font(.caption)
-          .foregroundStyle(.secondary)
-        Spacer()
-        statusBadge
-      }
-      Divider()
+  private var metaLine: some View {
+    HStack {
+      Text("Created \(dateFormat.dayAndTimeString(from: post.file.metadata.createdAt))")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      Spacer()
+      statusBadge
     }
   }
 
@@ -103,7 +103,6 @@ struct PostDetailView: View {
     let syndication = post.file.metadata.syndication
     let pending = post.file.metadata.targets
     if !syndication.isEmpty || !pending.isEmpty {
-      Divider()
       VStack(alignment: .leading, spacing: 8) {
         Text("Copies")
           .font(.caption.weight(.semibold))
@@ -132,7 +131,7 @@ struct PostDetailView: View {
         NetworkIconView(network: copy.network, size: 12)
         Text(copy.account)
         Spacer()
-        Text(copy.publishedAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+        Text(dateFormat.dayAndTimeString(from: copy.publishedAt))
           .font(.caption)
           .foregroundStyle(.secondary)
       }
@@ -166,7 +165,6 @@ struct PostDetailView: View {
   private var extractedTokens: some View {
     let extracted = ContentExtractor.extract(from: post.file.body)
     if extracted != ContentExtractor.Extracted() {
-      Divider()
       VStack(alignment: .leading, spacing: 10) {
         if !extracted.hashtags.isEmpty {
           tokenRow(title: "Hashtags", tokens: extracted.hashtags, color: Palette.hashtag)

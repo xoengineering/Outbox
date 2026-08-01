@@ -3,6 +3,9 @@ import SwiftUI
 
 /// One row in the posts list: content snippet, endpoint pairs, date, and status.
 struct PostRowView: View {
+  @AppStorage(DateFormatChoice.defaultsKey) private var dateFormat = DateFormatChoice.monthDayYear
+  @AppStorage("ShowsRowAvatars") private var showsRowAvatars = true
+
   /// True when this row is selected and its list owns focus.
   var isEmphasized = false
   var pairs: [EndpointPair]
@@ -16,12 +19,20 @@ struct PostRowView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
       HStack(spacing: 4) {
         ForEach(pairs) { pair in
-          AvatarNetworkPairView(
-            avatarURL: pair.avatarURL,
-            iconTint: isEmphasized ? Palette.selectedContent : nil,
-            network: pair.network,
-            size: 16
-          )
+          if showsRowAvatars {
+            AvatarNetworkPairView(
+              avatarURL: pair.avatarURL,
+              iconTint: isEmphasized ? Palette.selectedContent : nil,
+              network: pair.network,
+              size: 16
+            )
+          } else {
+            NetworkIconView(
+              network: pair.network,
+              size: 14,
+              tint: isEmphasized ? Palette.selectedContent : nil
+            )
+          }
         }
         if post.file.metadata.isFavorite {
           Image(systemName: "star.fill")
@@ -39,7 +50,7 @@ struct PostRowView: View {
             .background(post.status.color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
             .foregroundStyle(post.status.color)
         } else {
-          Text(post.file.metadata.createdAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+          Text(dateFormat.dayAndTimeString(from: post.file.metadata.createdAt))
         }
       }
       .font(.caption)
