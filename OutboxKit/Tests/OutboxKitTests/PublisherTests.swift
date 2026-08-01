@@ -106,13 +106,13 @@ import Testing
     target.replyParentURL = parentURL
     let output = await publisher.publish(
       body: "One more thing.\n",
-      inReplyToPost: "2026/09/18/happy-bday-to-me-1.md",
+      inReplyToPost: "2026/09/18/01-happy-bday-to-me.md",
       to: [target]
     )
 
     let fileURL = try #require(output.fileURL)
     let file = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
-    #expect(file.metadata.inReplyToPost == "2026/09/18/happy-bday-to-me-1.md")
+    #expect(file.metadata.inReplyToPost == "2026/09/18/01-happy-bday-to-me.md")
     #expect(adapter.receivedPosts.first?.replyTo == .mastodon(statusID: "115000000000000001"))
   }
 

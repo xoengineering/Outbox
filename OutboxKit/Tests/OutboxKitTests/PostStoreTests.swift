@@ -16,7 +16,7 @@ import Testing
   @Test func savesUnderDatePath() throws {
     let url = try store.save(draft())
 
-    let expectedPath = "2026/09/18/happy-bday-to-me-1.md"
+    let expectedPath = "2026/09/18/01-happy-bday-to-me.md"
     #expect(url == baseDirectory.appendingPathComponent(expectedPath))
     #expect(store.relativePath(of: url) == expectedPath)
     #expect(try PostFile.parse(String(contentsOf: url, encoding: .utf8)) == draft())
@@ -26,8 +26,8 @@ import Testing
     let firstURL = try store.save(draft(body: "Happy bday to me. 🎂\n"))
     let secondURL = try store.save(draft(body: "Blowing out candles now.\n"))
 
-    #expect(firstURL.lastPathComponent == "happy-bday-to-me-1.md")
-    #expect(secondURL.lastPathComponent == "blowing-out-candles-now-2.md")
+    #expect(firstURL.lastPathComponent == "01-happy-bday-to-me.md")
+    #expect(secondURL.lastPathComponent == "02-blowing-out-candles-now.md")
   }
 
   @Test func overwritesInPlaceWhenGivenExistingURL() throws {
@@ -48,7 +48,7 @@ import Testing
     #expect(reloaded.metadata.isPublished)
     #expect(reloaded.metadata.targets.isEmpty)
     let siblings = try FileManager.default.contentsOfDirectory(atPath: url.deletingLastPathComponent().path)
-    #expect(siblings == ["happy-bday-to-me-1.md"])
+    #expect(siblings == ["01-happy-bday-to-me.md"])
   }
 
   private func draft(body: String = "Happy bday to me. 🎂\n") -> PostFile {

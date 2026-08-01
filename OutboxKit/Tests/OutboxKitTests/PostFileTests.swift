@@ -41,7 +41,7 @@ import Testing
 
   @Test func parsesReplyReferences() throws {
     let thread = try PostFile.parse(try fixture("post-thread-reply.md"))
-    #expect(thread.metadata.inReplyToPost == "2026/09/18/happy-bday-to-me-1.md")
+    #expect(thread.metadata.inReplyToPost == "2026/09/18/01-happy-bday-to-me.md")
     #expect(thread.metadata.inReplyTo == nil)
 
     let external = try PostFile.parse(try fixture("post-external-reply.md"))

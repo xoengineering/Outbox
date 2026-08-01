@@ -2,8 +2,9 @@ import Foundation
 
 /// Writes post files into the on-disk archive.
 ///
-/// Layout: `<base>/<YYYY>/<MM>/<DD>/<slug>-<NthOfDay>.md` — one file per Post;
-/// network copies live inside its frontmatter.
+/// Layout: `<base>/<YYYY>/<MM>/<DD>/<NN>-<slug>.md` — one file per Post, with a
+/// zero-padded Nth-of-day prefix so a day's folder lists chronologically;
+/// network copies live inside the frontmatter.
 public struct PostStore: Sendable {
   public var baseDirectory: URL
   public var timeZone: TimeZone
@@ -21,13 +22,12 @@ public struct PostStore: Sendable {
     let directory = dayDirectory(for: file.metadata)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-    let nthOfDay = try existingPostCount(in: directory) + 1
     let slug = Slug.from(file.body)
-    var url = directory.appendingPathComponent("\(slug)-\(nthOfDay).md")
-    var bump = nthOfDay
+    var nthOfDay = try existingPostCount(in: directory) + 1
+    var url = directory.appendingPathComponent(fileName(nthOfDay: nthOfDay, slug: slug))
     while FileManager.default.fileExists(atPath: url.path) {
-      bump += 1
-      url = directory.appendingPathComponent("\(slug)-\(bump).md")
+      nthOfDay += 1
+      url = directory.appendingPathComponent(fileName(nthOfDay: nthOfDay, slug: slug))
     }
 
     try save(file, to: url)
@@ -84,6 +84,10 @@ public struct PostStore: Sendable {
       .appendingPathComponent(String(format: "%04d", components.year!), isDirectory: true)
       .appendingPathComponent(String(format: "%02d", components.month!), isDirectory: true)
       .appendingPathComponent(String(format: "%02d", components.day!), isDirectory: true)
+  }
+
+  private func fileName(nthOfDay: Int, slug: String) -> String {
+    String(format: "%02d-%@.md", nthOfDay, slug)
   }
 
   private func existingPostCount(in directory: URL) throws -> Int {
