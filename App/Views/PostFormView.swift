@@ -41,30 +41,26 @@ struct PostFormView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       formHeader
+        .padding(.horizontal)
 
-      replyField
-
-      TextEditor(text: $text)
-        .font(.title3)
-        .focused($isContentFocused)
-        .scrollContentBackground(.hidden)
-        .padding(8)
-        .background(Palette.editorFill, in: RoundedRectangle(cornerRadius: 12))
-        .frame(minHeight: 180)
+      fields
 
       if let errorMessage {
         Text(errorMessage)
           .foregroundStyle(Palette.danger)
           .textSelection(.enabled)
+          .padding(.horizontal)
       }
 
       actionButtons
+        .padding(.horizontal)
 
       if case .edit(let post) = mode {
         dangerZone(for: post)
+          .padding(.horizontal)
       }
     }
-    .padding()
+    .padding(.vertical)
     .navigationTitle(isNew ? "New Post" : "Edit Post")
     .task {
       isContentFocused = true
@@ -115,24 +111,53 @@ struct PostFormView: View {
     }
   }
 
+  /// The reply context and writing fields: unbounded, with hairline rules
+  /// running edge to edge across the column.
   @ViewBuilder
-  private var replyField: some View {
-    if case .new(.thread(let parent)) = mode {
-      Label {
-        Text("Continuing thread: \(parent.file.body.trimmingCharacters(in: .whitespacesAndNewlines))")
-          .lineLimit(1)
-          .foregroundStyle(.secondary)
-      } icon: {
-        Image(systemName: "text.append")
+  private var fields: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      if case .new(.thread(let parent)) = mode {
+        threadParentPreview(parent)
+          .padding(.horizontal)
+          .padding(.bottom, 12)
+      } else if isNew || isEditableDraft {
+        if let upstreamSnapshot {
+          SnapshotCardView(snapshot: upstreamSnapshot)
+            .padding(.horizontal)
+            .padding(.bottom, 12)
+        }
+        Divider()
+        TextField("In reply to (paste a Mastodon or Bluesky post URL)", text: $replyURLText)
+          .textFieldStyle(.plain)
+          .font(.title3)
+          .padding(.horizontal, 16)
+          .padding(.vertical, 12)
       }
-      .font(.callout)
-    } else if isNew || isEditableDraft {
-      TextField("In reply to (paste a Mastodon or Bluesky post URL)", text: $replyURLText)
-        .textFieldStyle(.roundedBorder)
-      if let upstreamSnapshot {
-        SnapshotCardView(snapshot: upstreamSnapshot)
-      }
+      Divider()
+      TextEditor(text: $text)
+        .font(.title3)
+        .focused($isContentFocused)
+        .scrollContentBackground(.hidden)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
+        .frame(minHeight: 200)
+      Divider()
     }
+  }
+
+  /// The full post this one continues, rendered whole above the form.
+  private func threadParentPreview(_ parent: StoredPost) -> some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Label("Continuing thread", systemImage: "text.append")
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.secondary)
+      Text(parent.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
+        .font(.callout)
+        .textSelection(.enabled)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .padding(10)
+    .background(Palette.editorFill, in: RoundedRectangle(cornerRadius: 8))
   }
 
   private func refreshUpstreamPreview() async {
