@@ -17,7 +17,6 @@ struct PostRowView: View {
     VStack(alignment: .leading, spacing: 6) {
       Text(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
         .font(.title3)
-        .lineLimit(2)
         .frame(maxWidth: .infinity, alignment: .leading)
       HStack(spacing: 4) {
         if post.status == .draft {
