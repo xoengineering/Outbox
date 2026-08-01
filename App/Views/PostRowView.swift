@@ -47,7 +47,7 @@ struct PostRowView: View {
       .font(.caption)
       .foregroundStyle(.tertiary)
     }
-    .padding(.vertical, 6)
+    .padding(.vertical, 10)
   }
 
   @ViewBuilder
