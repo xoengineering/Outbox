@@ -15,10 +15,8 @@ struct AvatarNetworkPairView: View {
       avatar
         .frame(width: size, height: size)
         .clipShape(Circle())
-      Divider()
-        .frame(height: size * 0.55)
-      NetworkIconView(network: network, size: size * 0.5)
-        .frame(width: size * 0.95, height: size)
+      NetworkIconView(network: network, size: size)
+        .padding(.horizontal, size * 0.2)
     }
     .background(Palette.inactiveFill, in: Capsule())
     .accessibilityElement(children: .combine)
