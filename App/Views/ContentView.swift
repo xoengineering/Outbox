@@ -11,7 +11,7 @@ struct ContentView: View {
     @Bindable var model = model
     NavigationSplitView {
       AccountsSidebarView()
-        .navigationSplitViewColumnWidth(min: 180, ideal: 230)
+        .navigationSplitViewColumnWidth(min: 180, ideal: 230, max: 340)
         #if os(macOS)
           .focusSection()
         #endif
