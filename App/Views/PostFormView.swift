@@ -88,12 +88,11 @@ struct PostFormView: View {
       }
       .font(.headline)
     case .new:
-      ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 8) {
-          if model.accounts.isEmpty {
-            Text("Add an account in Settings to publish anywhere.")
-              .foregroundStyle(.secondary)
-          }
+      if model.accounts.isEmpty {
+        Text("Add an account in Settings to publish anywhere.")
+          .foregroundStyle(.secondary)
+      } else {
+        FlowLayout(spacing: 8) {
           ForEach(model.accounts) { account in
             EndpointChipView(
               account: account,
