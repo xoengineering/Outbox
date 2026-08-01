@@ -1,6 +1,10 @@
 import OutboxKit
 import SwiftUI
 
+#if os(macOS)
+  import AppKit
+#endif
+
 /// Hidden buttons carrying the app-wide keyboard shortcuts.
 ///
 /// ⌘1/2/3 focus columns; ⌘R reply; ⌘E edit; ⌘←/→ move between columns
@@ -61,6 +65,14 @@ struct KeyboardCommandsView: View {
       }
     }
     .keyboardShortcut("e", modifiers: .command)
+    #if os(macOS)
+      Button("Show in Finder") {
+        if let post = model.selectedPost {
+          NSWorkspace.shared.activateFileViewerSelecting([post.fileURL])
+        }
+      }
+      .keyboardShortcut("r", modifiers: [.command, .option])
+    #endif
   }
 
   @ViewBuilder

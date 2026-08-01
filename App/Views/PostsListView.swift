@@ -26,6 +26,7 @@ struct PostsListView: View {
             Button("Show in Finder") {
               NSWorkspace.shared.activateFileViewerSelecting([post.fileURL])
             }
+            .keyboardShortcut("r", modifiers: [.command, .option])
           }
         #endif
       }
