@@ -16,6 +16,7 @@ struct PostFormView: View {
   let mode: Mode
 
   @Environment(AppModel.self) private var model
+  @State private var isConfirmingDiscard = false
   @FocusState private var isContentFocused: Bool
   @FocusState private var isReplyFieldFocused: Bool
   @State private var errorMessage: String?
@@ -196,9 +197,23 @@ struct PostFormView: View {
   private var actionButtons: some View {
     HStack {
       Button("Cancel") {
-        model.detailMode = .browse
+        if hasUnsavedContent {
+          isConfirmingDiscard = true
+        } else {
+          model.detailMode = .browse
+        }
       }
       .keyboardShortcut(.cancelAction)
+      .confirmationDialog(
+        isNew ? "Discard this post?" : "Discard unsaved changes?",
+        isPresented: $isConfirmingDiscard,
+        titleVisibility: .visible
+      ) {
+        Button("Discard", role: .destructive) {
+          model.detailMode = .browse
+        }
+        Button("Keep Editing", role: .cancel) {}
+      }
 
       Spacer()
 
@@ -289,6 +304,16 @@ struct PostFormView: View {
   private var isNew: Bool {
     if case .new = mode { return true }
     return false
+  }
+
+  /// True when cancelling would throw away something the user typed.
+  private var hasUnsavedContent: Bool {
+    switch mode {
+    case .new:
+      return !trimmedText.isEmpty || !replyURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    case .edit(let post):
+      return trimmedText != post.file.body.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
   }
 
   /// The reply URL field exists for new posts and drafts, but not thread continuations.
