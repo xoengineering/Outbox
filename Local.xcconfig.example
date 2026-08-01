@@ -1,0 +1,9 @@
+// Local build settings. Copy to Local.xcconfig (gitignored) and fill in.
+// script/generate does that copy for you when Local.xcconfig is missing.
+//
+// DEVELOPMENT_TEAM is your Apple Developer Team ID, from
+// developer.apple.com/account → Membership details. It's needed for the
+// data-protection Keychain to work; without it, Outbox falls back to the
+// login keychain and macOS may prompt more often.
+
+DEVELOPMENT_TEAM =

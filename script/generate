@@ -5,4 +5,9 @@ set -e
 
 cd "$(dirname "$0")/.."
 
+if [ ! -f Local.xcconfig ]; then
+  cp Local.xcconfig.example Local.xcconfig
+  echo "Created Local.xcconfig — set DEVELOPMENT_TEAM in it to sign locally."
+fi
+
 xcodegen generate
