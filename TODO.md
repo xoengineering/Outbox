@@ -106,7 +106,8 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
 
 ## Milestone 3.5 — Single-Post model (done 2026-07-31)
 
-- [x] One canonical file per Post: `YYYY/MM/DD/slug-N.md`; network copies live in
+- [x] One canonical file per Post: `YYYY/MM/DD/NN-slug.md` (zero-padded Nth of
+      day, so folders list chronologically); network copies live in
       frontmatter (`syndication` list; `targets` = destinations still owed a copy)
 - [x] Per-copy `text` override records what was actually sent when it differed
 - [x] Failed/pending targets stay in `targets` — re-publish retries exactly those

@@ -26,18 +26,22 @@ syndicated to each network (POSSE).
 
 ## File format
 
+One file per Post — the canonical copy you own. Each network it's published
+to is recorded as a syndicated copy (POSSE / LOCKSS).
+
 ```
-~/Documents/Outbox/Mastodon/@you@instance.social/2026/09/18/happy-bday-to-me-1.md
+~/Documents/Outbox/2026/09/18/01-happy-bday-to-me.md
 ```
 
 ```markdown
 ---
-network: mastodon
-account: "@you@instance.social"
 created_at: 2026-09-18T17:32:00Z
-published_at: 2026-09-18T17:32:05Z
-id: "115234567890123456"
-url: https://instance.social/@you/115234567890123456
+syndication:
+  - network: mastodon
+    account: "@you@instance.social"
+    published_at: 2026-09-18T17:32:05Z
+    id: "115234567890123456"
+    url: https://instance.social/@you/115234567890123456
 ---
 
 Happy bday to me. 🎂
