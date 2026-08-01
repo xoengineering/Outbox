@@ -26,7 +26,7 @@ struct PostRowView: View {
             .resizable()
             .scaledToFit()
             .frame(height: 16)
-            .foregroundStyle(Palette.favorite)
+            .foregroundStyle(isEmphasized ? Palette.selectedContent : AnyShapeStyle(Palette.favorite))
         }
         Spacer()
         if post.status == .draft {
