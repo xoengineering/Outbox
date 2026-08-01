@@ -54,7 +54,21 @@ struct AccountsSidebarView: View {
         press.key == "d" && press.modifiers.contains(.control) ? .handled : .ignored
       }
       .onChange(of: isFocused) {
-        if isFocused { lastFocusedColumn = "accounts" }
+        if isFocused {
+          lastFocusedColumn = "accounts"
+          model.focusedColumn = .accounts
+        }
+      }
+      // List/ScrollView tab traversal broke when the sidebar went hand-rolled;
+      // move focus between columns explicitly.
+      .onKeyPress { press in
+        guard press.key == .tab else { return .ignored }
+        if press.modifiers.contains(.shift) {
+          model.focusRequest = model.detailMode != .browse ? .form : .posts
+        } else {
+          model.focusRequest = .posts
+        }
+        return .handled
       }
       .onChange(of: model.focusRequest) {
         guard model.focusRequest == .accounts else { return }

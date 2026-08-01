@@ -46,6 +46,8 @@ struct EndpointPair: Identifiable {
   var accounts: [Account] = []
   var detailMode: DetailMode = .browse
   var enabledAccountIDs: Set<UUID> = []
+  /// Which column currently owns keyboard focus, as reported by the views.
+  var focusedColumn: FocusTarget?
   var focusRequest: FocusTarget?
   var posts: [StoredPost] = []
   var searchText = ""
@@ -202,6 +204,31 @@ struct EndpointPair: Identifiable {
       try PostStore(baseDirectory: baseURL).save(file, to: post.fileURL)
     }
     await reloadPosts()
+  }
+
+  /// Moves keyboard focus one column left (-1) or right (+1).
+  func moveFocus(_ delta: Int) {
+    var columns: [FocusTarget] = [.accounts, .posts]
+    if detailMode != .browse { columns.append(.form) }
+    let current = focusedColumn ?? .accounts
+    guard let index = columns.firstIndex(of: current) else {
+      focusRequest = columns.first
+      return
+    }
+    focusRequest = columns[min(max(index + delta, 0), columns.count - 1)]
+  }
+
+  /// Clears every pill filter (the "All" pill).
+  func clearFilters() {
+    favoritesFilter = false
+    networkFilters.removeAll()
+    statusFilters.removeAll()
+  }
+
+  func toggleStatusFilter(_ status: StoredPost.Status) {
+    if !statusFilters.insert(status).inserted {
+      statusFilters.remove(status)
+    }
   }
 
   // MARK: - Composing

@@ -73,6 +73,9 @@ struct PostFormView: View {
       isContentFocused = true
       model.focusRequest = nil
     }
+    .onChange(of: isContentFocused) {
+      if isContentFocused { model.focusedColumn = .form }
+    }
     .sheet(item: $publishRun, onDismiss: finishAfterPublish) { run in
       PublishResultsView(results: run.results)
     }

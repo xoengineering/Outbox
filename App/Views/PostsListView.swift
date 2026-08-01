@@ -21,13 +21,25 @@ struct PostsListView: View {
     // macOS routes ⌃D (the text system's deleteForward:) into the list, where it
     // strangely moves selection. Swallow it; text views keep their native ⌃D.
     .onKeyPress { press in
-      press.key == "d" && press.modifiers.contains(.control) ? .handled : .ignored
+      if press.key == "d" && press.modifiers.contains(.control) { return .handled }
+      if press.key == .tab {
+        if press.modifiers.contains(.shift) {
+          model.focusRequest = .accounts
+        } else {
+          model.focusRequest = model.detailMode != .browse ? .form : .accounts
+        }
+        return .handled
+      }
+      return .ignored
     }
     #if os(macOS)
       .focusSection()
     #endif
     .onChange(of: isFocused) {
-      if isFocused { lastFocusedColumn = "posts" }
+      if isFocused {
+        lastFocusedColumn = "posts"
+        model.focusedColumn = .posts
+      }
     }
     .onChange(of: model.focusRequest) {
       guard model.focusRequest == .posts else { return }
