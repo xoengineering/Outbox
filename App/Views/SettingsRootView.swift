@@ -9,6 +9,7 @@ struct SettingsRootView: View {
     private enum SettingsTab: Hashable {
       case accounts
       case general
+      case tools
     }
 
     @State private var selectedTab: SettingsTab = .general
@@ -25,6 +26,9 @@ struct SettingsRootView: View {
         Tab("Accounts", systemImage: "person.crop.circle", value: .accounts) {
           AccountsSettingsView()
         }
+        Tab("Tools", systemImage: "wrench.and.screwdriver", value: .tools) {
+          ToolsSettingsView()
+        }
       }
       .frame(width: 600, height: selectedTab == .general ? 400 : 560)
     #else
@@ -37,6 +41,10 @@ struct SettingsRootView: View {
           NavigationLink("Accounts") {
             AccountsSettingsView()
               .navigationTitle("Accounts")
+          }
+          NavigationLink("Tools") {
+            ToolsSettingsView()
+              .navigationTitle("Tools")
           }
         }
         .navigationTitle("Settings")

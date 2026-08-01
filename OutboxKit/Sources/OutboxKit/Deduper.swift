@@ -28,16 +28,19 @@ public struct Deduper: Sendable {
   }
 
   /// Merges a group into one Post: union of copies and targets, earliest
-  /// creation date, favorite if any was. The survivor is the post with the
-  /// most copies (ties: oldest); the others' files are deleted.
+  /// creation date, favorite if any was.
+  ///
+  /// The survivor is the post with the most copies (ties: oldest);
+  /// the others' files are deleted.
   @discardableResult
   public func merge(_ group: DupeGroup) throws -> StoredPost? {
-    guard let winner = group.posts.max(by: { lhs, rhs in
-      if lhs.file.metadata.syndication.count != rhs.file.metadata.syndication.count {
-        return lhs.file.metadata.syndication.count < rhs.file.metadata.syndication.count
-      }
-      return lhs.file.metadata.createdAt > rhs.file.metadata.createdAt
-    })
+    guard
+      let winner = group.posts.max(by: { lhs, rhs in
+        if lhs.file.metadata.syndication.count != rhs.file.metadata.syndication.count {
+          return lhs.file.metadata.syndication.count < rhs.file.metadata.syndication.count
+        }
+        return lhs.file.metadata.createdAt > rhs.file.metadata.createdAt
+      })
     else { return nil }
 
     var file = winner.file

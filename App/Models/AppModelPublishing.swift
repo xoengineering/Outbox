@@ -132,6 +132,32 @@ extension AppModel {
     await reloadPosts()
   }
 
+  // MARK: - Tools
+
+  /// Backfills one account's published posts from its network into the archive.
+  func importPosts(for account: Account) async throws -> ImportReport {
+    let report = try await archiveFolder.withAccess { baseURL in
+      try await PostImporter(store: PostStore(baseDirectory: baseURL))
+        .importPosts(for: account, credential: self.credential(for: account))
+    }
+    await reloadPosts()
+    return report
+  }
+
+  func dupeGroups() async -> [DupeGroup] {
+    let groups = try? await archiveFolder.withAccess { baseURL in
+      try Deduper(store: PostStore(baseDirectory: baseURL)).candidateGroups()
+    }
+    return groups ?? []
+  }
+
+  func mergeDupes(_ group: DupeGroup) async {
+    _ = try? await archiveFolder.withAccess { baseURL in
+      try Deduper(store: PostStore(baseDirectory: baseURL)).merge(group)
+    }
+    await reloadPosts()
+  }
+
   // MARK: - Target building
 
   private func targets(for accounts: [Account], reply: ReplyContext?) -> [Publisher.Target] {
