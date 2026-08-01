@@ -15,6 +15,7 @@ struct PostsListView: View {
         isEmphasized: isFocused && model.selectedPostID == post.id,
         post: post
       )
+      .listRowSeparator(.hidden)
     }
     .focused($isFocused)
     // macOS routes ⌃D (the text system's deleteForward:) into the list, where it

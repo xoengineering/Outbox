@@ -9,9 +9,10 @@ struct PostRowView: View {
   var post: StoredPost
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 3) {
+    VStack(alignment: .leading, spacing: 6) {
       HStack(alignment: .top) {
         Text(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
+          .font(.title3)
           .lineLimit(2)
         Spacer()
         if post.status == .draft {
@@ -36,6 +37,6 @@ struct PostRowView: View {
       .font(.caption)
       .foregroundStyle(.tertiary)
     }
-    .padding(.vertical, 3)
+    .padding(.vertical, 6)
   }
 }
