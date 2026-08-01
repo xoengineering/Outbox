@@ -8,17 +8,39 @@ struct SidebarAccountRowView: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      AvatarNetworkPairView(avatarURL: account.avatarURL, network: account.network, size: 26)
+      avatar
       VStack(alignment: .leading, spacing: 1) {
         Text(account.displayName ?? account.handle)
           .lineLimit(1)
           .foregroundStyle(isSelected ? Palette.selectedContent : AnyShapeStyle(.primary))
-        Text(account.handle)
-          .lineLimit(1)
-          .font(.caption)
-          .foregroundStyle(isSelected ? Palette.selectedSecondaryContent : AnyShapeStyle(.secondary))
+        HStack(spacing: 4) {
+          NetworkIconView(
+            network: account.network,
+            size: 10,
+            tint: isSelected ? Palette.selectedContent : nil
+          )
+          Text(account.handle)
+            .lineLimit(1)
+        }
+        .font(.caption)
+        .foregroundStyle(isSelected ? Palette.selectedSecondaryContent : AnyShapeStyle(.secondary))
       }
     }
     .padding(.vertical, 2)
+  }
+
+  @ViewBuilder
+  private var avatar: some View {
+    AsyncImage(url: account.avatarURL) { image in
+      image
+        .resizable()
+        .scaledToFill()
+    } placeholder: {
+      Image(systemName: "person.crop.circle.fill")
+        .resizable()
+        .foregroundStyle(.quaternary)
+    }
+    .frame(width: 28, height: 28)
+    .clipShape(Circle())
   }
 }
