@@ -26,7 +26,7 @@ struct DetailColumnView: View {
       }
     }
     .toolbar {
-      ToolbarItem(placement: .navigation) {
+      ToolbarItem(placement: .primaryAction) {
         Button("New Post", systemImage: "square.and.pencil") {
           model.startNewPost()
         }
