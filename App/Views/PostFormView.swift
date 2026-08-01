@@ -18,7 +18,6 @@ struct PostFormView: View {
   @Environment(AppModel.self) private var model
   @FocusState private var isContentFocused: Bool
   @FocusState private var isReplyFieldFocused: Bool
-  @State private var confirmingDelete = false
   @State private var errorMessage: String?
   @State private var isWorking = false
   @State private var publishRun: PublishRun?
@@ -64,7 +63,7 @@ struct PostFormView: View {
         .padding(.horizontal)
 
       if case .edit(let post) = mode {
-        dangerZone(for: post)
+        PostFormDangerZoneView(post: post)
           .padding(.horizontal)
       }
     }
@@ -152,7 +151,7 @@ struct PostFormView: View {
   private var fields: some View {
     VStack(alignment: .leading, spacing: 0) {
       if case .new(.thread(let parent)) = mode {
-        threadParentPreview(parent)
+        ThreadParentPreviewView(parent: parent)
           .padding(.horizontal)
           .padding(.bottom, 12)
       } else if isNew || isEditableDraft {
@@ -179,21 +178,6 @@ struct PostFormView: View {
         .frame(minHeight: 200)
       Divider()
     }
-  }
-
-  /// The full post this one continues, rendered whole above the form.
-  private func threadParentPreview(_ parent: StoredPost) -> some View {
-    VStack(alignment: .leading, spacing: 4) {
-      Label("Continuing thread", systemImage: "text.append")
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.secondary)
-      Text(parent.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
-        .font(.callout)
-        .textSelection(.enabled)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    .padding(10)
-    .background(Palette.editorFill, in: RoundedRectangle(cornerRadius: 8))
   }
 
   private func refreshUpstreamPreview() async {
@@ -257,32 +241,6 @@ struct PostFormView: View {
         .keyboardShortcut(.return, modifiers: .command)
         .disabled(!canPublishNew)
       }
-    }
-  }
-
-  private func dangerZone(for post: StoredPost) -> some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Divider()
-      HStack {
-        Label("Danger Zone", systemImage: "exclamationmark.triangle")
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(.secondary)
-        Spacer()
-        Button("Delete Post…", role: .destructive) {
-          confirmingDelete = true
-        }
-      }
-    }
-    .confirmationDialog(
-      "Delete this post file?",
-      isPresented: $confirmingDelete,
-      titleVisibility: .visible
-    ) {
-      Button("Delete", role: .destructive) {
-        Task { await model.deletePost(post) }
-      }
-    } message: {
-      Text("This removes the local file only. Copies already on networks stay published.")
     }
   }
 
