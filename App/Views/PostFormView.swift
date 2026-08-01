@@ -20,6 +20,7 @@ struct PostFormView: View {
   @State private var replyURLText: String
   @State private var selectedTargetIDs: Set<UUID>?
   @State private var text: String
+  @State private var upstreamSnapshot: ReplySnapshot?
 
   init(mode: Mode) {
     self.mode = mode
@@ -67,6 +68,12 @@ struct PostFormView: View {
     .navigationTitle(isNew ? "New Post" : "Edit Post")
     .task {
       isContentFocused = true
+      await refreshUpstreamPreview()
+    }
+    .task(id: replyURLText) {
+      try? await Task.sleep(for: .milliseconds(600))
+      guard !Task.isCancelled else { return }
+      await refreshUpstreamPreview()
     }
     .onChange(of: model.focusRequest) {
       guard model.focusRequest == .form else { return }
@@ -122,7 +129,22 @@ struct PostFormView: View {
     } else if isNew || isEditableDraft {
       TextField("In reply to (paste a Mastodon or Bluesky post URL)", text: $replyURLText)
         .textFieldStyle(.roundedBorder)
+      if let upstreamSnapshot {
+        SnapshotCardView(snapshot: upstreamSnapshot)
+      }
     }
+  }
+
+  private func refreshUpstreamPreview() async {
+    guard case .external(let url) = replyContext else {
+      upstreamSnapshot = nil
+      return
+    }
+    if case .edit(let post) = mode, let saved = post.file.metadata.inReplyToSnapshot {
+      upstreamSnapshot = saved
+      return
+    }
+    upstreamSnapshot = await model.fetchSnapshot(for: url)
   }
 
   @ViewBuilder

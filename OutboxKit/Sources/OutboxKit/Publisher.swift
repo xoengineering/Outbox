@@ -52,9 +52,16 @@ public struct Publisher: Sendable {
     body: String,
     inReplyTo: URL? = nil,
     inReplyToPost: String? = nil,
+    inReplyToSnapshot: ReplySnapshot? = nil,
     to targets: [Target]
   ) async -> Output {
-    var file = draftFile(body: body, inReplyTo: inReplyTo, inReplyToPost: inReplyToPost, targets: targets)
+    var file = draftFile(
+      body: body,
+      inReplyTo: inReplyTo,
+      inReplyToPost: inReplyToPost,
+      inReplyToSnapshot: inReplyToSnapshot,
+      targets: targets
+    )
 
     let fileURL: URL
     do {
@@ -75,9 +82,16 @@ public struct Publisher: Sendable {
     body: String,
     inReplyTo: URL? = nil,
     inReplyToPost: String? = nil,
+    inReplyToSnapshot: ReplySnapshot? = nil,
     for targets: [Target]
   ) -> Output {
-    let file = draftFile(body: body, inReplyTo: inReplyTo, inReplyToPost: inReplyToPost, targets: targets)
+    let file = draftFile(
+      body: body,
+      inReplyTo: inReplyTo,
+      inReplyToPost: inReplyToPost,
+      inReplyToSnapshot: inReplyToSnapshot,
+      targets: targets
+    )
     do {
       let fileURL = try store.save(file)
       let results = targets.map {
@@ -150,6 +164,7 @@ public struct Publisher: Sendable {
     body: String,
     inReplyTo: URL?,
     inReplyToPost: String?,
+    inReplyToSnapshot: ReplySnapshot?,
     targets: [Target]
   ) -> PostFile {
     PostFile(
@@ -158,6 +173,7 @@ public struct Publisher: Sendable {
         createdAt: now(),
         inReplyTo: inReplyTo,
         inReplyToPost: inReplyToPost,
+        inReplyToSnapshot: inReplyToSnapshot,
         targets: targets.map { Endpoint(account: $0.account.handle, network: $0.account.network) }
       )
     )

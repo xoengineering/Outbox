@@ -248,6 +248,7 @@ import OutboxKit
     let targets = targets(for: enabledAccounts, reply: reply)
     let externalReply: URL? =
       if case .external(let url) = reply { url } else { nil }
+    let snapshot = await fetchSnapshot(for: externalReply)
 
     let results = await archiveFolder.withAccess { baseURL -> [Publisher.TargetResult] in
       let store = PostStore(baseDirectory: baseURL)
@@ -259,6 +260,7 @@ import OutboxKit
         body: body,
         inReplyTo: externalReply,
         inReplyToPost: threadPath,
+        inReplyToSnapshot: snapshot,
         to: targets
       )
       return output.results
@@ -271,6 +273,7 @@ import OutboxKit
     let targets = targets(for: enabledAccounts, reply: reply)
     let externalReply: URL? =
       if case .external(let url) = reply { url } else { nil }
+    let snapshot = await fetchSnapshot(for: externalReply)
 
     _ = await archiveFolder.withAccess { baseURL -> [Publisher.TargetResult] in
       let store = PostStore(baseDirectory: baseURL)
@@ -282,10 +285,19 @@ import OutboxKit
         body: body,
         inReplyTo: externalReply,
         inReplyToPost: threadPath,
+        inReplyToSnapshot: snapshot,
         for: targets
       ).results
     }
     await reloadPosts()
+  }
+
+  /// Fetches a keepable copy of an upstream post, using any account on its network.
+  func fetchSnapshot(for url: URL?) async -> ReplySnapshot? {
+    guard let url else { return nil }
+    let network = inferredNetwork(of: url)
+    guard let account = accounts.first(where: { $0.network == network }) else { return nil }
+    return await ReplyResolver().snapshot(url, account: account, credential: credential(for: account))
   }
 
   /// Publishes a post's pending targets, threading replies per network.

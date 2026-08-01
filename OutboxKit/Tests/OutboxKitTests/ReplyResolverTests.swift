@@ -76,6 +76,32 @@ import Testing
     }
   }
 
+  @Test func snapshotsMastodonPost() async throws {
+    let transport = FixtureTransport(fixtureName: "mastodon-search-status.json")
+    let resolver = ReplyResolver(now: { Date.iso8601("2026-09-18T18:04:50Z") }, transport: transport)
+    let url = URL(string: "https://ruby.social/@someone/115000000000000001")!
+
+    let snapshot = await resolver.snapshot(url, account: mastodonAccount, credential: .accessToken("token"))
+
+    #expect(snapshot?.author == "@someone@ruby.social")
+    #expect(snapshot?.text == "Original post & a second line.\nWith a break.")
+    #expect(snapshot?.fetchedAt == Date.iso8601("2026-09-18T18:04:50Z"))
+  }
+
+  @Test func snapshotsBlueskyPost() async throws {
+    let transport = FixtureTransport(stubs: [
+      .init(fixtureName: "bluesky-resolve-handle.json", statusCode: 200),
+      .init(fixtureName: "bluesky-get-record.json", statusCode: 200),
+    ])
+    let resolver = ReplyResolver(now: { Date.iso8601("2026-09-18T18:04:50Z") }, transport: transport)
+    let url = URL(string: "https://bsky.app/profile/someoneelse.com/post/3parent111")!
+
+    let snapshot = await resolver.snapshot(url, account: blueskyAccount, credential: .none)
+
+    #expect(snapshot?.author == "@someoneelse.com")
+    #expect(snapshot?.text == "Original post being replied to.")
+  }
+
   @Test func threadsResolvesToNil() async throws {
     let resolver = ReplyResolver(transport: FixtureTransport(stubs: []))
     let account = Account(

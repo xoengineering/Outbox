@@ -75,6 +75,9 @@ struct PostDetailView: View {
 
   @ViewBuilder
   private var replyLinks: some View {
+    if let snapshot = post.file.metadata.inReplyToSnapshot {
+      SnapshotCardView(snapshot: snapshot)
+    }
     if let inReplyTo = post.file.metadata.inReplyTo {
       Label {
         Link(destination: inReplyTo) {

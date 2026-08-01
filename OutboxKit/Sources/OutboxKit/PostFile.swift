@@ -57,6 +57,15 @@ public struct PostFile: Equatable, Sendable {
     if let inReplyToPost = metadata.inReplyToPost {
       lines.append("in_reply_to_post: \(quoted(inReplyToPost))")
     }
+    if let snapshot = metadata.inReplyToSnapshot {
+      lines.append("in_reply_to_snapshot:")
+      lines.append("  author: \(quoted(snapshot.author))")
+      lines.append("  fetched_at: \(iso8601(snapshot.fetchedAt))")
+      lines.append("  text: |")
+      for textLine in snapshot.text.components(separatedBy: "\n") {
+        lines.append(textLine.isEmpty ? "" : "    \(textLine)")
+      }
+    }
     if !metadata.targets.isEmpty {
       lines.append("targets:")
       for target in metadata.targets {
@@ -109,10 +118,21 @@ public struct PostFile: Equatable, Sendable {
       createdAt: createdAt,
       inReplyTo: try url(from: fields["in_reply_to"], field: "in_reply_to"),
       inReplyToPost: fields["in_reply_to_post"] as? String,
+      inReplyToSnapshot: snapshot(from: fields["in_reply_to_snapshot"] as? [String: Any]),
       isFavorite: fields["favorite"] as? Bool ?? false,
       syndication: syndication,
       targets: targets
     )
+  }
+
+  private static func snapshot(from fields: [String: Any]?) -> ReplySnapshot? {
+    guard let fields,
+      let author = fields["author"] as? String,
+      let fetchedAt = date(from: fields["fetched_at"]),
+      var text = fields["text"] as? String
+    else { return nil }
+    if text.hasSuffix("\n") { text = String(text.dropLast()) }
+    return ReplySnapshot(author: author, fetchedAt: fetchedAt, text: text)
   }
 
   private static func endpoint(from fields: [String: Any], field: String) throws -> Endpoint {

@@ -8,6 +8,8 @@ public struct PostMetadata: Equatable, Sendable {
   public var inReplyTo: URL?
   /// Archive-relative path of our own Post this one continues (a thread).
   public var inReplyToPost: String?
+  /// Saved copy of the upstream post `inReplyTo` points at.
+  public var inReplyToSnapshot: ReplySnapshot?
   /// Starred within Outbox as a writing tool; never sent to any network.
   public var isFavorite: Bool
   /// Copies that exist on networks.
@@ -19,6 +21,7 @@ public struct PostMetadata: Equatable, Sendable {
     createdAt: Date,
     inReplyTo: URL? = nil,
     inReplyToPost: String? = nil,
+    inReplyToSnapshot: ReplySnapshot? = nil,
     isFavorite: Bool = false,
     syndication: [Syndication] = [],
     targets: [Endpoint] = []
@@ -26,6 +29,7 @@ public struct PostMetadata: Equatable, Sendable {
     self.createdAt = createdAt
     self.inReplyTo = inReplyTo
     self.inReplyToPost = inReplyToPost
+    self.inReplyToSnapshot = inReplyToSnapshot
     self.isFavorite = isFavorite
     self.syndication = syndication
     self.targets = targets

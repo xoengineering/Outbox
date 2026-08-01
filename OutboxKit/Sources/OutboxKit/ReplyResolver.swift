@@ -3,30 +3,72 @@ import Foundation
 /// Turns a pasted post URL into the reply reference a network's API needs.
 public protocol ReplyResolving: Sendable {
   func resolve(_ url: URL, account: Account, credential: Credential) async throws -> ResolvedReply?
+  func snapshot(_ url: URL, account: Account, credential: Credential) async -> ReplySnapshot?
+}
+
+extension ReplyResolving {
+  public func snapshot(_ url: URL, account: Account, credential: Credential) async -> ReplySnapshot? {
+    nil
+  }
 }
 
 public struct ReplyResolver: ReplyResolving {
+  private let now: @Sendable () -> Date
   private let transport: any HTTPTransport
 
-  public init(transport: any HTTPTransport = URLSessionTransport()) {
+  public init(
+    now: @escaping @Sendable () -> Date = { Date() },
+    transport: any HTTPTransport = URLSessionTransport()
+  ) {
+    self.now = now
     self.transport = transport
   }
 
   public func resolve(_ url: URL, account: Account, credential: Credential) async throws -> ResolvedReply? {
     switch account.network {
-    case .bluesky: try await resolveBluesky(url, serverURL: account.serverURL)
-    case .mastodon: try await resolveMastodon(url, serverURL: account.serverURL, credential: credential)
-    case .threads: nil
+    case .bluesky:
+      let (record, _) = try await blueskyRecord(url, serverURL: account.serverURL)
+      let parent = RecordRef(cid: record.cid, uri: record.uri)
+      return .bluesky(parent: parent, root: record.value.reply?.root ?? parent)
+    case .mastodon:
+      let status = try await mastodonStatus(url, serverURL: account.serverURL, credential: credential)
+      return .mastodon(statusID: status.id)
+    case .threads:
+      return nil
     }
   }
 
+  /// Fetches a keepable copy of the upstream post: author and plain text.
+  public func snapshot(_ url: URL, account: Account, credential: Credential) async -> ReplySnapshot? {
+    switch account.network {
+    case .bluesky:
+      guard let (record, profile) = try? await blueskyRecord(url, serverURL: account.serverURL),
+        let text = record.value.text
+      else { return nil }
+      return ReplySnapshot(author: "@\(profile)", fetchedAt: now(), text: text)
+    case .mastodon:
+      guard
+        let status = try? await mastodonStatus(url, serverURL: account.serverURL, credential: credential)
+      else { return nil }
+      return ReplySnapshot(
+        author: "@\(status.account?.acct ?? "unknown")",
+        fetchedAt: now(),
+        text: HTMLText.plainText(fromHTML: status.content ?? "")
+      )
+    case .threads:
+      return nil
+    }
+  }
+
+  // MARK: - Mastodon
+
   /// Resolves any fediverse status URL via the instance's search API,
   /// which also fetches statuses the instance hasn't seen yet.
-  private func resolveMastodon(
+  private func mastodonStatus(
     _ url: URL,
     serverURL: URL,
     credential: Credential
-  ) async throws -> ResolvedReply {
+  ) async throws -> SearchResponse.Status {
     guard case .accessToken(let token) = credential else { throw AdapterError.missingCredential }
 
     var components = URLComponents(
@@ -46,12 +88,17 @@ public struct ReplyResolver: ReplyResolving {
     guard let status = results.statuses.first else {
       throw AdapterError.replyNotFound(url.absoluteString)
     }
-    return .mastodon(statusID: status.id)
+    return status
   }
 
-  /// Resolves a `https://bsky.app/profile/<handle>/post/<rkey>` URL to strong record
-  /// refs, walking up to the thread root when the parent is itself a reply.
-  private func resolveBluesky(_ url: URL, serverURL: URL) async throws -> ResolvedReply {
+  // MARK: - Bluesky
+
+  /// Fetches the record behind a `https://bsky.app/profile/<handle>/post/<rkey>`
+  /// URL, returning it with the profile segment of the URL.
+  private func blueskyRecord(
+    _ url: URL,
+    serverURL: URL
+  ) async throws -> (GetRecordResponse, String) {
     let pathParts = url.path.split(separator: "/").map(String.init)
     guard pathParts.count == 4, pathParts[0] == "profile", pathParts[2] == "post" else {
       throw AdapterError.replyNotFound("Expected a bsky.app post URL, got \(url.absoluteString)")
@@ -82,11 +129,10 @@ public struct ReplyResolver: ReplyResolving {
       URLQueryItem(name: "rkey", value: recordKey),
     ]
     let record: GetRecordResponse = try await getJSON(URLRequest(url: components.url!))
-
-    let parent = RecordRef(cid: record.cid, uri: record.uri)
-    let root = record.value.reply?.root ?? parent
-    return .bluesky(parent: parent, root: root)
+    return (record, profile)
   }
+
+  // MARK: - Shared
 
   private func getJSON<Response: Decodable>(_ request: URLRequest) async throws -> Response {
     let (data, response) = try await transport.send(request)
@@ -103,8 +149,14 @@ public struct ReplyResolver: ReplyResolving {
     var statuses: [Status]
 
     struct Status: Decodable {
+      var account: StatusAccount?
+      var content: String?
       var id: String
     }
+  }
+
+  private struct StatusAccount: Decodable {
+    var acct: String
   }
 
   private struct ResolveHandleResponse: Decodable {
@@ -119,6 +171,7 @@ public struct ReplyResolver: ReplyResolving {
 
   private struct RecordValue: Decodable {
     var reply: RecordValueReply?
+    var text: String?
   }
 
   private struct RecordValueReply: Decodable {

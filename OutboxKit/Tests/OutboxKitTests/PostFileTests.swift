@@ -47,6 +47,9 @@ import Testing
     let external = try PostFile.parse(try fixture("post-external-reply.md"))
     #expect(external.metadata.inReplyTo == URL(string: "https://ruby.social/@someone/115000000000000001"))
     #expect(external.metadata.inReplyToPost == nil)
+    let snapshot = try #require(external.metadata.inReplyToSnapshot)
+    #expect(snapshot.author == "@someone@ruby.social")
+    #expect(snapshot.text == "Original post & a second line.\nWith a break.")
   }
 
   @Test func roundTripsAllFixturesExactly() throws {
