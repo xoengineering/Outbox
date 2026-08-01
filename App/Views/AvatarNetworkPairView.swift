@@ -16,12 +16,7 @@ struct AvatarNetworkPairView: View {
       avatar
         .frame(width: size, height: size)
         .clipShape(Circle())
-      // Glyph shapes vary, so their square frames leave uneven negative space.
-      // Oversize each glyph and crop it to an avatar-sized circle for a
-      // consistent footprint.
-      NetworkIconView(network: network, size: size * 1.35, tint: iconTint)
-        .frame(width: size, height: size)
-        .clipShape(Circle())
+      NetworkIconView(network: network, size: size, tint: iconTint)
         .padding(.horizontal, size * 0.2)
     }
     .padding(1)
