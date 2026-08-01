@@ -10,7 +10,11 @@ struct PostsListView: View {
   var body: some View {
     @Bindable var model = model
     List(model.visiblePosts, selection: $model.selectedPostID) { post in
-      PostRowView(avatarURL: model.account(for: post)?.avatarURL, post: post)
+      PostRowView(
+        avatarURL: model.account(for: post)?.avatarURL,
+        isEmphasized: isFocused && model.selectedPostID == post.id,
+        post: post
+      )
     }
     .focused($isFocused)
     // macOS routes ⌃D (the text system's deleteForward:) into the list, where it

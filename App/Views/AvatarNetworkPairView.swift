@@ -7,6 +7,7 @@ import SwiftUI
 /// own cell on the right.
 struct AvatarNetworkPairView: View {
   var avatarURL: URL?
+  var background: AnyShapeStyle = Palette.inactiveFill
   var network: Network
   var size: CGFloat = 24
 
@@ -19,7 +20,7 @@ struct AvatarNetworkPairView: View {
         .padding(.horizontal, size * 0.2)
     }
     .padding(1)
-    .background(Palette.inactiveFill, in: Capsule())
+    .background(background, in: Capsule())
     .accessibilityElement(children: .combine)
     .accessibilityLabel(network.displayName)
   }

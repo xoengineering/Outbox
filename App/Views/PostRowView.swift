@@ -4,6 +4,8 @@ import SwiftUI
 /// One row in the posts list: content snippet, avatar-network pair, date, and status.
 struct PostRowView: View {
   var avatarURL: URL?
+  /// True when this row is selected and its list owns focus.
+  var isEmphasized = false
   var post: StoredPost
 
   var body: some View {
@@ -22,7 +24,12 @@ struct PostRowView: View {
         }
       }
       HStack(spacing: 4) {
-        AvatarNetworkPairView(avatarURL: avatarURL, network: post.file.metadata.network, size: 16)
+        AvatarNetworkPairView(
+          avatarURL: avatarURL,
+          background: isEmphasized ? Palette.selectedContent : Palette.inactiveFill,
+          network: post.file.metadata.network,
+          size: 16
+        )
         Spacer()
         Text(post.file.metadata.createdAt, format: .dateTime.month(.abbreviated).day().hour().minute())
       }
