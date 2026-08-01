@@ -32,6 +32,13 @@ enum Palette {
   static let unfocusedSelectionFill = AnyShapeStyle(.quaternary)
   /// Background of the post content editor.
   static let editorFill = AnyShapeStyle(.quaternary.opacity(0.5))
+  /// Concrete surface color for badge plates (window/system background;
+  /// hierarchical `.background` washes out in some contexts).
+  #if os(macOS)
+    static let surface = Color(nsColor: .windowBackgroundColor)
+  #else
+    static let surface = Color(uiColor: .systemBackground)
+  #endif
   /// Background of inactive pills and chips.
   static let inactiveFill = AnyShapeStyle(.quaternary)
 

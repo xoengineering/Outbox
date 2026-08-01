@@ -17,11 +17,8 @@ struct AccountsSettingsView: View {
         }
         ForEach(model.accounts) { account in
           HStack {
-            Label {
-              Text(account.handle)
-            } icon: {
-              NetworkIconView(network: account.network)
-            }
+            AvatarBadgeView(avatarURL: account.avatarURL, network: account.network, size: 24)
+            Text(account.handle)
             Spacer()
             Text(account.network.displayName)
               .font(.caption)

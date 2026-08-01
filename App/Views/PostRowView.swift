@@ -1,11 +1,10 @@
 import OutboxKit
 import SwiftUI
 
-/// One row in the posts list: content snippet, account, date, and status.
+/// One row in the posts list: content snippet, badged avatar, date, and status.
 struct PostRowView: View {
+  var avatarURL: URL?
   var post: StoredPost
-  /// True when this row is selected and its list owns focus.
-  var isEmphasized = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 3) {
@@ -23,13 +22,7 @@ struct PostRowView: View {
         }
       }
       HStack(spacing: 4) {
-        NetworkIconView(
-          network: post.file.metadata.network,
-          size: 10,
-          tint: isEmphasized ? Palette.selectedContent : nil
-        )
-        Text(post.file.metadata.account)
-          .lineLimit(1)
+        AvatarBadgeView(avatarURL: avatarURL, network: post.file.metadata.network, size: 18)
         Spacer()
         Text(post.file.metadata.createdAt, format: .dateTime.month(.abbreviated).day().hour().minute())
       }
