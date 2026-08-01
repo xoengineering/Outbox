@@ -4,6 +4,12 @@ All notable changes to Outbox are documented here.
 
 ## Unreleased
 
+- Request `read:statuses` and `read:search` in the Mastodon OAuth scopes, so
+  importing and reply resolution work; add a Reconnect button for accounts
+  authorized before those scopes existed.
+- Import shows live progress (posts fetched, replies resolved, merge position)
+  and now carries `in_reply_to` for imported replies on both networks.
+
 - Add Tools settings tab: import your published posts from Mastodon/Bluesky
   (smart merge by content, dupes kept for review), and a Photos-style de-duper
   that only merges with per-group confirmation.
