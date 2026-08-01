@@ -51,31 +51,33 @@ struct PostsListView: View {
     }
     .navigationTitle(model.selectedAccountLabel)
     .safeAreaInset(edge: .top, spacing: 0) {
-      ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 6) {
-          allPill
-          statusPill("Drafts", status: .draft)
-          statusPill("Published", status: .published)
-          favoritesPill
-          Divider()
-            .frame(height: 14)
-          ForEach(Network.allCases) { network in
-            networkPill(network)
+      HStack(spacing: 0) {
+        ScrollView(.horizontal, showsIndicators: false) {
+          HStack(spacing: 6) {
+            allPill
+            statusPill("Drafts", status: .draft)
+            statusPill("Published", status: .published)
+            favoritesPill
+            Divider()
+              .frame(height: 14)
+            ForEach(Network.allCases) { network in
+              networkPill(network)
+            }
           }
+          .fixedSize(horizontal: true, vertical: false)
+          .padding(.leading, 10)
+          .padding(.vertical, 6)
         }
-        .fixedSize(horizontal: true, vertical: false)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-      }
-      .background(.bar)
-    }
-    .toolbar {
-      ToolbarItem(placement: .primaryAction) {
         Button("New Post", systemImage: "square.and.pencil") {
           model.startNewPost()
         }
         .keyboardShortcut("n", modifiers: .command)
+        .labelStyle(.iconOnly)
+        .buttonStyle(.borderless)
+        .padding(.horizontal, 8)
+        .help("New Post (⌘N)")
       }
+      .background(.bar)
     }
     .onChange(of: model.selectedPostID) {
       model.detailMode = .browse
