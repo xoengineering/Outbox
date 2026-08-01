@@ -18,6 +18,14 @@ struct PostRowView: View {
         .lineLimit(2)
         .frame(maxWidth: .infinity, alignment: .leading)
       HStack(spacing: 4) {
+        if post.status == .draft {
+          Text("Draft")
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(post.status.color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
+            .foregroundStyle(post.status.color)
+        }
         ForEach(pairs) { pair in
           if showsRowAvatars {
             AvatarNetworkPairView(
@@ -42,14 +50,7 @@ struct PostRowView: View {
             .foregroundStyle(isEmphasized ? Palette.selectedContent : AnyShapeStyle(Palette.favorite))
         }
         Spacer()
-        if post.status == .draft {
-          Text("Draft")
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(post.status.color.opacity(Palette.tintedCapsuleOpacity), in: Capsule())
-            .foregroundStyle(post.status.color)
-        } else {
+        if post.status == .published {
           Text(dateFormat.dayAndTimeString(from: post.file.metadata.createdAt))
         }
       }
