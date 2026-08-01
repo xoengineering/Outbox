@@ -5,8 +5,9 @@ import Foundation
 public struct MastodonOAuth: Sendable {
   public static let redirectURI = "outbox://oauth/mastodon"
   /// `read:accounts` identifies you, `read:statuses` backfills your posts,
-  /// `read:search` resolves the post a reply targets, `write:statuses` publishes.
-  public static let scopes = "read:accounts read:search read:statuses write:statuses"
+  /// `read:search` resolves the post a reply targets, `write:media` uploads
+  /// attachments, `write:statuses` publishes and edits.
+  public static let scopes = "read:accounts read:search read:statuses write:media write:statuses"
 
   private let transport: any HTTPTransport
 

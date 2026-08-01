@@ -121,18 +121,21 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
 ## Milestone 3.6 — Shane's punch list (2026-07-31)
 
 Settings
+
 - [x] Toggle: show/hide avatars in post row footers (all-on is a bit NASCAR)
 - [x] "Open folder in Finder" button for the archive folder
 - [x] Date format choice: `Sep 18, 1979` / `1979-09-18` / `09/18/1979`
 - [x] Post content size for the detail column (not the list): xs s m l xl
 
 Tools
+
 - [x] Import all my posts from signed-in sites — all sites or one at a time.
       Collisions: smart merge; when in doubt keep dupes for manual review
 - [x] De-duper: used by import, also manually invocable (Settings → Tools).
       Photos.app-style candidate list, Merge/Keep All per group
 
 Keyboard
+
 - [x] ⇥/⇧⇥ moves focus between columns again (handled explicitly)
 - [x] ⌘R reply to selected post
 - [x] ⌘←/⌘→ move focus between columns (inactive while writing, so the
@@ -144,6 +147,7 @@ Keyboard
 - [x] ⌘1 focus sidebar (as-is); ⌘⌥1 All Posts; ⌘⌥2 Published; ⌘⌥3 Drafts; ⌘⌥4 Faves
 
 Post show column
+
 - [x] No header before content; more blank space above content
 - [x] Whitespace instead of separator lines
 - [x] "Written" → "Created"
@@ -151,6 +155,7 @@ Post show column
       author, text, fetched_at); preview card in show view and above the reply form
 
 Edit
+
 - [x] Edit an already-published post upstream where the site allows it
       ("Update Copies": Mastodon edits via PUT; Bluesky/Threads record the live
       text as per-copy divergence instead)
@@ -169,6 +174,7 @@ Edit
 - [x] Autolinked URLs in the show view; full post text in list rows
 
 Threads caveats worth knowing
+
 - Its API takes media only from a **public URL**, never an upload, so posts with
   attachments are skipped (with a reason) rather than silently losing images.
   Fix would need Outbox to host media somewhere reachable.
@@ -178,14 +184,8 @@ Threads caveats worth knowing
 
 ## Milestone 4 — More content types
 
-- [ ] Media attachments with alt text (next up). Design:
-      - Attachment files copied into the post's day folder next to the `.md`
-        (`<slug>-<N>-1.jpg`), so the archive stays self-contained plaintext + assets
-      - Frontmatter: `media:` list of `{file, alt}` entries
-      - Mastodon: `POST /api/v2/media` (multipart) → `media_ids[]` on the status
-      - Bluesky: `com.atproto.repo.uploadBlob` → `app.bsky.embed.images` with alt
-      - Composer: attach via file picker, per-image alt text fields, previews
-      - Limits per network (Mastodon 4 images; Bluesky 4 images ≤1MB — verify)
+- [ ] Media attachments with alt text (next up). Design: - Attachment files copied into the post's day folder next to the `.md`
+      (`<slug>-<N>-1.jpg`), so the archive stays self-contained plaintext + assets - Frontmatter: `media:` list of `{file, alt}` entries - Mastodon: `POST /api/v2/media` (multipart) → `media_ids[]` on the status - Bluesky: `com.atproto.repo.uploadBlob` → `app.bsky.embed.images` with alt - Composer: attach via file picker, per-image alt text fields, previews - Limits per network (Mastodon 4 images; Bluesky 4 images ≤1MB — verify)
 - [ ] Content warnings / spoiler text (Mastodon), labels (Bluesky)
 - [ ] Cross-network thread follow-ups: use `composition` to find sibling files and
       reply per-network to each sibling automatically
@@ -214,6 +214,7 @@ Threads caveats worth knowing
 From `~/Developer/dark-energy/z_Outbox_previously`:
 
 **Worth keeping**
+
 - `Outbox 1/Micropub` (403 LOC) + `Outbox 1/IndieAuth` (252 LOC): genuinely working
   clients for Milestone 5. Need PKCE, URLSession injection, honest tests.
 - `Outbox 1/test-server/server.rb`: Sinatra IndieAuth provider bootable from Swift
@@ -223,6 +224,7 @@ From `~/Developer/dark-energy/z_Outbox_previously`:
 - `.swift-format` config (already copied into this repo).
 
 **Dead ends to avoid (lessons applied here)**
+
 - Packages never wired into the app → the two halves never met. Wire early.
 - In-memory singleton DataStore, `"drafts"` magic strings → untestable thrash.
 - `ENABLE_APP_SANDBOX = NO` + bare folder path in UserDefaults → use
@@ -231,3 +233,93 @@ From `~/Developer/dark-energy/z_Outbox_previously`:
 - Zero Mastodon/Bluesky/network code existed in either attempt — all written fresh here.
 - Inflated test claims (micropub.rocks "compliance" tests that assert
   `token.count > 0`). Re-verify against real servers.
+
+---
+
+Attached media:
+
+- [ ] Show thumbnail of attached image/etc in new Post form
+
+Settings:
+
+- [ ] Accounts: Only show `Reconnect` button if Mastodon account _needs_ reconnecting. It being there makes me think that I SHOULD click it.
+
+Settings > Display:
+
+- [ ] General > Display: Make Display its own Settings tab
+- [ ] Show an example Post which gets changed as each display setting is changed
+- [ ] Add a content size setting for Posts column too
+- [ ] Add setting for Post details, to use New York font for Post.content. Default: SF
+
+Settings > Tools:
+
+- [ ] Import— show a "Last imported at…" on each one that's been used.
+- [ ] Add a Stop button
+- [ ] Can we pull both Tools out of Settings and into their own little window, and new Menu (Tools > Import from Sites, Tools > Find Duplicates)
+
+Posts column:
+
+- [ ] Double the current vertical padding inside of a Post row
+- [ ] Move timestamp from right/end, to left/start, on a line above the social icons: - Content - Timestamp - Draft pill, social icons
+
+Threading:
+
+- [ ] I'd love to group linked threads of Posts into a visible presentation of their linked threadedness. Kinda like Reddit.
+- [ ] Like this:
+  - [ ] Post 1
+    - [ ] Post 2, in reply to Post 1
+    - [ ] Post 3, in reply to Post 2
+    - [ ] Post 4, in reply to Post 3
+  - [ ] Post 5, unrelated to the other
+- [ ] An obvious question that comes up: what happens to posts in a thread that are chronologically after other posts NOT in the thread? Do they get hoisted up out of the normal timeline feed?
+- [ ] Can threading be a UI setting toggle? Thread Posts yes: (default) / no: shows all Posts flat, chronologically
+
+# Future features
+
+Lists:
+
+- [ ] Lists (like playlists, albums)
+- [ ] All local, no upstream push of Lists
+- [ ] List can be global or scoped to an account
+- [ ] Manually add a Post to any List
+- [ ] Post can be in zero, one, or many Lists
+- [ ] Smart Lists:
+  - [ ] Autopopulated
+  - [ ] A search query builder thing, like iTunes
+  - [ ] Schema defined attributes (dates, account, hashtags, media, URLs, mentions,...)
+  - [ ] Free form search
+
+Post details/show view:
+
+- [ ] Improve the design, feels …fine now. But disjointed, fragmented.
+- [ ] Maybeeee… leave simple useful metadata in view (social icons, not account name of URL)
+  - [ ] and put the full details metadata details in a hidable Inspector panel
+  - [ ] Make clearer `Edit this Post` icon from `New Post` icon
+    - [ ] Separate `New Post` from button group, slide it to start/left of title bar area
+- [ ] Embed attached media in details views
+- [ ] Embed linked media (YouTube URLs, image URLs, etc)
+  - [ ] Download personal cache copy of linked/embeded media (yt-dlp, etc)
+    - [ ] Settings section to check for `brew`, install `brew`, install `yt-dlp`, default/preferred filetypes for video, audio
+
+Richer form editor:
+
+- [ ] Live preview of what a Post will look like on target sites
+- [ ] A way to manually control the slice/dice a Post differently for different target networks (eg, a longer single Post to Masto, two half size threaded Posts to Bluesky. etc)
+
+Rich social media aware Contacts app:
+
+- [ ] Already started somewhere else
+- [ ] Goal: I can tag the person I know of as "Shane", then his correct @handle is used for each syndicated copy.
+- [ ] How to "@tag"/reference people in the stored file version of a Post? A human name with footnote, footnote lists all the handles/site? Eg:
+  - [ ] Today, I met Shane^[shane].
+  - [ ] ^[shane]: | Mastodon: @veganstraightedge.ruby.social, Bluesky: @veganstraightedge.com, Threads: @veganstraightedge, Website: https://veganstraightedge.com
+- [ ] Or maybe a Markdown link with extra handle in the link "title", which get extracted for POSSEed copies. And rendered as inline icons in local? I dunno.
+- [ ] TBD
+
+Feed Me, See More:
+
+- Separate app: Feed Me, See More.
+- An everything reader. All feeds/subs in one place.
+- Only relates to Outbox for two way integration:
+- From Feed Me… "Reply to this in Outbox" or something. To go from feed reading, to isolated writing.
+- From Outbox… "Go to Post in reader" or something. To go from isolated writing, to full sensory feed reading.

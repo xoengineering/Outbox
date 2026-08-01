@@ -29,7 +29,7 @@ import Testing
     #expect(query["code_challenge_method"] == "S256")
     #expect(query["redirect_uri"] == "outbox://oauth/mastodon")
     #expect(query["response_type"] == "code")
-    #expect(query["scope"] == "read:accounts read:search read:statuses write:statuses")
+    #expect(query["scope"] == "read:accounts read:search read:statuses write:media write:statuses")
   }
 
   @Test func exchangesCodeForToken() async throws {
