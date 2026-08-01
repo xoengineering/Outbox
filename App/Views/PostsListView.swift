@@ -1,6 +1,10 @@
 import OutboxKit
 import SwiftUI
 
+#if os(macOS)
+  import AppKit
+#endif
+
 /// Second column: the archive, newest first, filtered by sidebar selection and search.
 struct PostsListView: View {
   @AppStorage("LastFocusedColumn") private var lastFocusedColumn = "accounts"
@@ -17,6 +21,13 @@ struct PostsListView: View {
           post: post
         )
         .listRowSeparator(.hidden)
+        #if os(macOS)
+          .contextMenu {
+            Button("Show in Finder") {
+              NSWorkspace.shared.activateFileViewerSelecting([post.fileURL])
+            }
+          }
+        #endif
       }
       .focused($isFocused)
       // macOS routes ⌃D (the text system's deleteForward:) into the list, where it
