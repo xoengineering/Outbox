@@ -5,8 +5,8 @@ import PackageDescription
 let package = Package(
   name: "OutboxKit",
   platforms: [
-    .iOS("26.5"),
-    .macOS("26.5"),
+    .iOS("26.6"),
+    .macOS("26.6"),
   ],
   products: [
     .library(

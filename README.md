@@ -17,7 +17,7 @@ syndicated to each network (POSSE).
 
 ## Development
 
-- macOS/iOS/iPadOS 26.5+, Swift 6.3+, SwiftUI, Swift Testing
+- macOS/iOS/iPadOS 26.6+, Swift 6.3+, SwiftUI, Swift Testing
 - `script/setup` — install tools, generate `Outbox.xcodeproj` (XcodeGen), and
   create `Local.xcconfig` from the example. Set `DEVELOPMENT_TEAM` in it to your
   Apple Developer Team ID; it's gitignored, so no one's team ID is in the repo.

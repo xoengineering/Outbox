@@ -3,8 +3,8 @@ options:
   bundleIdPrefix: engineering.xo
   createIntermediateGroups: true
   deploymentTarget:
-    iOS: "26.5"
-    macOS: "26.5"
+    iOS: "26.6"
+    macOS: "26.6"
 packages:
   OutboxKit:
     path: OutboxKit

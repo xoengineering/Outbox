@@ -5,7 +5,7 @@ Post to socials without the distraction of feed reading. Every post is saved
 locally as a plaintext Markdown file first; syndication to each network is a
 separate step (POSSE).
 
-Minimums: macOS/iOS/iPadOS 26.5, Swift 6.3+, SwiftUI, Swift Testing.
+Minimums: macOS/iOS/iPadOS 26.6, Swift 6.3+, SwiftUI, Swift Testing.
 
 ---
 
@@ -121,8 +121,9 @@ Decisions made unilaterally to keep moving — flag anything you want changed.
 
 ### Housekeeping
 
-- [ ] Bump deployment targets 26.5 → 26.6 now that it's out: `project.yml`,
-      `OutboxKit/Package.swift`, and the minimums line in this file and the README
+- [x] Bump deployment targets to 26.6 (`project.yml`, `OutboxKit/Package.swift`,
+      README and TODO minimums). Xcode 26.6 still ships the 26.5 SDK, which is
+      fine — the binary carries `minos 26.6` built against `sdk 26.5`
 - [ ] CI workflow running `script/cibuild` (lint, tests, macOS + iOS builds)
 
 ### Robustness
