@@ -29,7 +29,7 @@ syndicated to each network (POSSE).
 One file per Post — the canonical copy you own. Each network it's published
 to is recorded as a syndicated copy (POSSE / LOCKSS).
 
-```
+```sh
 ~/Documents/Outbox/2026/09/18/01-happy-bday-to-me.md
 ```
 

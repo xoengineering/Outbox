@@ -11,203 +11,172 @@ Minimums: macOS/iOS/iPadOS 26.5, Swift 6.3+, SwiftUI, Swift Testing.
 
 ## Open Questions
 
-Decisions I made unilaterally to keep moving — flag anything you want changed.
+Decisions made unilaterally to keep moving — flag anything you want changed.
+(Answered ones are struck from the list as they're settled.)
 
-1. **Bundle ID**: `engineering.xo.Outbox` (confirmed). The Mastodon app-registration
-   website is `https://xo.engineering` — inferred from the bundle ID; confirm the domain.
-2. **Bluesky auth**: v1 uses app passwords (Settings → App Passwords on Bluesky),
-   stored in Keychain. This bends the "never ask username/password" rule — full
-   atproto OAuth (PKCE + DPoP + PAR) is a heavy lift I deferred. Upgrade later?
-3. **Folder layout**: the TODO prose said flat `YYYY-MM-DD-slug-N.md` filenames but
-   the examples showed nested `YYYY/MM/DD/slug-N.md`. I followed the examples (nested).
-4. **Nth-of-day counter**: `-N` is the Nth post of that day for that account
-   (count of existing `.md` files in the day folder + 1), not the Nth with the same slug.
-5. **Day boundaries**: file paths use the user's local timezone for YYYY/MM/DD;
+1. **Mastodon app website** is `https://xo.engineering`, inferred from the bundle
+   ID `engineering.xo.Outbox`. Confirm the domain is right.
+2. **Bluesky auth uses app passwords**, not full atproto OAuth (PKCE + DPoP + PAR
+   + hosted client metadata). You called this a fair deferral; revisit when the
+   app has a public home for its client metadata JSON.
+3. **"Private" status**: drafts vs published is derived from whether any copies
+   exist. Is "private" a visibility value (Mastodon private/unlisted posts) or a
+   local-only "never publish" flag? Nothing implements it yet either way.
+4. **Character counting**: Mastodon counts codepoints with URLs at 23 and mention
+   domains stripped; Bluesky counts grapheme clusters (300); Threads flat 500.
+   Per-instance Mastodon limits are fetched at connect time.
+5. **Mastodon PKCE (S256)** is always sent. Instances older than 4.3 ignore the
+   parameters harmlessly, but that's untested against a real old instance.
+6. **iPhone/iPad UX**: the split view collapses on compact widths, but
+   compose-in-the-third-column needs a dedicated push/sheet flow on iPhone.
+   Mac-first so far; iOS builds but is unexercised.
+7. **⌘←/⌘→ are inactive while the editor has focus**, so the caret keeps
+   line-edge navigation. Say if you'd rather they always move columns.
+8. **Day boundaries**: file paths use your local timezone for `YYYY/MM/DD`;
    frontmatter timestamps are stored in UTC (`...Z`).
-6. **One file per endpoint**: publishing one composition to 3 accounts writes 3 files
-   (one per network/account), each carrying its own receipt (id/url/published_at).
-   Alternative: one canonical file + syndication links. I followed your examples.
-7. **Mastodon counting**: counts Unicode codepoints after replacing each URL with 23
-   characters and stripping mention domains — matches Mastodon's documented rules.
-   Bluesky counts grapheme clusters (300); Threads flat 500.
-8. **Threads**: stub adapter that no-ops (saves the file locally, sends nothing);
-   UI shows the endpoint. Real implementation would use the Threads API
-   (developers.facebook.com/docs/threads) — needs a Meta app registration.
-9. **Frontmatter schema**: `network`, `account`, `created_at`, then after publish
-   `published_at`, `id`, `url`. Kept minimal on purpose.
-10. **Mastodon OAuth uses PKCE (S256)**. Instances older than 4.3 ignore the PKCE
-    params, which is harmless — but I haven't verified against a real old instance.
-11. **Xcode project via XcodeGen** (`project.yml` → `script/generate`), so the
-    `.xcodeproj` is gitignored and regenerable.
-12. **"Private" status**: the spec mentioned private/published/draft. Files currently
-    derive draft vs published from `published_at`. Is "private" a visibility value
-    (Mastodon private posts) or a local-only "never publish" flag?
-13. **Editing published posts** edits the local file only (remote posts aren't
-    updated — Mastodon supports edits, Bluesky doesn't). The reply-URL field is
-    disabled when editing published posts.
-14. **Reply button targets that post's account only** and prefills its permalink.
-    Cross-network threaded follow-ups via `composition` siblings are Milestone 4.
-15. **iPhone/iPad UX**: the split view collapses on compact widths but compose-in-
-    third-column needs a dedicated push/sheet flow on iPhone. Mac-first for now.
 
 ---
 
-## Milestone 1 — Core (done)
+## Done
 
-- [x] `OutboxKit` Swift package, testable from CLI (`script/test`)
-- [x] `PostFile`: Markdown + YAML frontmatter, parse (Yams) + byte-stable serialize
-- [x] `Slug` derivation from content
-- [x] `PostStore`: `<base>/<Network>/<account>/<YYYY>/<MM>/<DD>/<slug>-<N>.md`
-- [x] `CharacterCount`: per-network rules + limits
-- [x] `MastodonAdapter`: `POST /api/v1/statuses` (Bearer token)
-- [x] `BlueskyAdapter`: createSession + createRecord with link facets (UTF-8 byte offsets)
-- [x] `ThreadsAdapter`: no-op stub
-- [x] `Publisher`: file-first orchestration; per-target failures isolated
-- [x] `MastodonOAuth`: app registration, authorize URL, token exchange, verify
-- [x] `KeychainStore` (data-protection keychain) + `AccountsRepository` (JSON)
+### Core kit (Milestone 1)
 
-## Milestone 2 — App shell (in progress)
+- [x] `OutboxKit` Swift package, testable from the CLI (`script/test`)
+- [x] `PostFile`: Markdown + YAML frontmatter, parsed with Yams, byte-stable serialize
+- [x] `Slug`, `CharacterCount` (per-network rules), `KeychainStore`, `AccountsRepository`
+- [x] `Publisher`: file-first orchestration, per-target failures isolated
+- [x] Adapters: Mastodon, Bluesky, Threads — all real, all fixture-tested
 
-- [ ] XcodeGen multiplatform target (macOS + iOS/iPadOS 26.5)
-- [ ] Composer: text editor + per-endpoint toggle chips with live character
-      count/limit per account, over-limit warning blocks publish to that endpoint
-- [ ] Accounts screen: add/remove Mastodon (OAuth via ASWebAuthenticationSession,
-      `outbox://oauth/mastodon` callback) and Bluesky (app password) accounts
-- [ ] Threads visible in UI as stub ("saves locally only")
-- [ ] Settings: archive base folder picker (default `~/Documents/Outbox`),
-      security-scoped bookmark so sandboxed access survives relaunch
-- [ ] Publish flow: results sheet per endpoint (link to remote post + local file)
-- [ ] App sandbox ON, entitlements: network client, user-selected file read/write
+### App shell (Milestone 2)
 
-## Milestone 2.5 — Three-column app (done 2026-07-31)
+- [x] XcodeGen multiplatform target (macOS + iOS/iPadOS 26.5), sandbox on,
+      entitlements for network client + user-selected files
+- [x] Composer with per-endpoint chips: live character counts against each
+      account's real limit; over-limit blocks publishing to that endpoint
+- [x] Accounts in Settings: Mastodon OAuth (ASWebAuthenticationSession,
+      `outbox://oauth/mastodon`), Bluesky app password, Threads OAuth
+- [x] Archive folder picker with security-scoped bookmarks; Open in Finder
+- [x] Publish results sheet per endpoint, linking remote post and local file
+
+### Three-column app (Milestone 2.5)
 
 - [x] Mail.app-style NavigationSplitView: Accounts | Posts | Post
-- [x] Sidebar: All Posts + per-account filtering; search field on the posts list
-- [x] Post show view: status badge, permalinks, extracted #hashtags/@mentions/URLs
-- [x] Post form in third column (new + edit), danger-zone delete with confirmation
-- [x] Drafts: save without publishing, publish later in place
-- [x] Replies: paste a Mastodon/Bluesky post URL → proper reply
-      (Mastodon `/api/v2/search` resolve; Bluesky resolveHandle + getRecord,
-      thread root propagated). Reply button on published posts prefills it.
-- [x] `composition` frontmatter ID linking sibling files from one crosspost
-- [x] `in_reply_to` frontmatter field
+- [x] Sidebar: All Posts / Published / Drafts / Favorites, globally and per
+      account; hand-rolled rows so expansion animates and the chevron centers
+- [x] Posts column: search, filter pills (status, favorites, per network),
+      full post text, avatar+network pairs, context menus
+- [x] Post show view: content first, permalinks, copies, extracted
+      #hashtags (clickable → filter) / @mentions / links, file path → Finder
+- [x] Post form in the third column for new and edit, with discard confirmation
 
-## Milestone 3 — Robustness
-
-- [x] Mastodon: fetch instance config (`/api/v2/instance`) to learn real character
-      limit per account; store as `Account.maximumCharacters`
-- [x] Mastodon PKCE (S256, RFC 7636 known-answer tested)
-- [ ] Bluesky: session refresh (reuse `refreshJwt` instead of new session per post)
-- [ ] Retry/queue: posts that fail to syndicate stay drafts; re-publish from file
-- [ ] Drafts browser: list local archive, open file in editor, publish later
-- [ ] Reveal in Finder / Files.app
-- [ ] Error surfaces: rate limits, dead instances, expired tokens (re-auth prompt)
-- [ ] iCloud Drive-safe file writing (coordinate if base folder is in iCloud)
-
-## Milestone 3.5 — Single-Post model (done 2026-07-31)
+### Single-Post model (Milestone 3.5)
 
 - [x] One canonical file per Post: `YYYY/MM/DD/NN-slug.md` (zero-padded Nth of
-      day, so folders list chronologically); network copies live in
-      frontmatter (`syndication` list; `targets` = destinations still owed a copy)
+      day, so folders list chronologically); network copies live in frontmatter
+      (`syndication` list; `targets` = destinations still owed a copy)
 - [x] Per-copy `text` override records what was actually sent when it differed
 - [x] Failed/pending targets stay in `targets` — re-publish retries exactly those
 - [x] `in_reply_to` (external URL) vs `in_reply_to_post` (own-post path);
       thread continuations resolve per-network parents from the parent's copies
-- [x] Automatic migration from the per-copy layout on launch (composition ID
-      grouping, same-content-same-minute fallback, favorite survives merge)
-- [ ] Import tool: pull already-published posts from sites into the archive
-- [ ] De-dupe tool: find same-content posts across sites and merge into one Post
+- [x] `in_reply_to_snapshot` keeps the upstream post you replied to (author,
+      text, fetched_at), shown as a quoted card in the form and show view
+- [x] Automatic migration from the old per-copy layout on launch
 
-## Milestone 3.6 — Shane's punch list (2026-07-31)
+### Tools
 
-Settings
+- [x] Import published posts from Mastodon and Bluesky, one account or all, with
+      live progress; smart merge by content, uncertain matches kept for review;
+      imported replies carry their `in_reply_to`
+- [x] De-duper (Settings → Tools): Photos-style candidate groups, Merge or Keep
+      All per group, never automatic
 
-- [x] Toggle: show/hide avatars in post row footers (all-on is a bit NASCAR)
-- [x] "Open folder in Finder" button for the archive folder
-- [x] Date format choice: `Sep 18, 1979` / `1979-09-18` / `09/18/1979`
-- [x] Post content size for the detail column (not the list): xs s m l xl
+### Media (Milestone 3.8)
 
-Tools
+- [x] Attachments with alt text: picker, thumbnails, per-file alt editing, remove;
+      `media:` frontmatter; files stored beside the post (`01-slug-1.jpg`)
+- [x] Mastodon upload (`POST /api/v2/media` → `media_ids`, alt as `description`)
+- [x] Bluesky upload (`uploadBlob` → `app.bsky.embed.images` with alt)
+- [x] Rendered in the show view with alt text beneath each image
 
-- [x] Import all my posts from signed-in sites — all sites or one at a time.
-      Collisions: smart merge; when in doubt keep dupes for manual review
-- [x] De-duper: used by import, also manually invocable (Settings → Tools).
-      Photos.app-style candidate list, Merge/Keep All per group
+### Editing and safety
 
-Keyboard
+- [x] "Update Copies" pushes edits upstream where allowed (Mastodon `PUT`);
+      networks that can't edit record their live text as per-copy divergence
+- [x] Favoriting within Outbox (`favorite: true`), never sent anywhere
+- [x] Nothing hard-deletes: posts and their media move to the Trash
 
-- [x] ⇥/⇧⇥ moves focus between columns again (handled explicitly)
-- [x] ⌘R reply to selected post
-- [x] ⌘←/⌘→ move focus between columns (inactive while writing, so the
-      editor keeps caret navigation — flag if you want it anyway)
-- [x] ⌘E edit selected post
-- [x] ⌃0 clear filters (All); ⌃1 drafts; ⌃2 published; ⌃3 faves;
-      ⌃4…9 toggle the network filter pills (pill order: ⌃4 Bluesky,
-      ⌃5 Mastodon, ⌃6 Threads)
-- [x] ⌘1 focus sidebar (as-is); ⌘⌥1 All Posts; ⌘⌥2 Published; ⌘⌥3 Drafts; ⌘⌥4 Faves
+### Keyboard and settings
 
-Post show column
+- [x] ⌘N new, ⌘R reply, ⌘E edit, Return edit, ⌘F search, ⌘⌥R reveal in Finder,
+      ⌃⌘S sidebar, ⇥/⇧⇥ and ⌘←/⌘→ between columns, ⌘1/2/3 focus a column
+- [x] j/k move selection, `.` favorites, ⌫ trash (⌘⌫ skips the confirmation);
+      type-to-select suppressed so stray keys don't jump the list
+- [x] ⌘⌥1–4 sidebar groups; ⌃0–3 status/favorite filters; ⌃4–9 network filters
+- [x] Settings: avatars on/off, network icons on/off, monochrome icons, date
+      format, post content size, archive folder
 
-- [x] No header before content; more blank space above content
-- [x] Whitespace instead of separator lines
-- [x] "Written" → "Created"
-- [x] Snapshot the replied-to post's data in frontmatter (`in_reply_to_snapshot`:
-      author, text, fetched_at); preview card in show view and above the reply form
+---
 
-Edit
+## Next
 
-- [x] Edit an already-published post upstream where the site allows it
-      ("Update Copies": Mastodon edits via PUT; Bluesky/Threads record the live
-      text as per-copy divergence instead)
-- [x] Continue a thread of an upstream post/thread (paste its URL as the reply
-      target; Bluesky mid-thread replies keep the proper thread root)
+### Robustness
 
-## Milestone 3.8 — Media and Threads (done 2026-08-01)
+- [ ] Bluesky session refresh (reuse `refreshJwt` instead of a new session per post)
+- [ ] Threads long-lived token refresh (`th_refresh_token`); they expire in ~60 days
+- [ ] Per-network attachment validation before upload: counts (4 images) and
+      Bluesky's ~1MB per-image ceiling. Right now an oversized image fails at the API
+- [ ] Video attachments are accepted by the picker but untested end to end
+- [ ] Importer doesn't backfill `in_reply_to` onto posts it already tracks —
+      only newly created/merged ones get it
+- [ ] Threads import (the API exposes your own posts; the importer skips Threads)
+- [ ] Error surfaces: rate limits, dead instances, expired tokens → prompt to
+      reconnect rather than showing a raw HTTP error
+- [ ] iCloud Drive-safe file writing (coordinate if the archive lives in iCloud)
+- [ ] Watch the archive folder for external edits and reload
 
-- [x] Attachments with alt text: picker in the composer, thumbnails, per-file alt
-      editing, remove; `media:` frontmatter; files stored beside the post
-      (`01-slug-1.jpg`); rendered in the show view with their alt text
-- [x] Mastodon media upload (`POST /api/v2/media` multipart → `media_ids`)
-- [x] Bluesky media upload (`uploadBlob` → `app.bsky.embed.images` with alt)
-- [x] Threads adapter for real: Graph API container + publish, reply_to_id,
-      permalink lookup, OAuth with long-lived token exchange
-- [x] Autolinked URLs in the show view; full post text in list rows
+### More content types
 
-Threads caveats worth knowing
-
-- Its API takes media only from a **public URL**, never an upload, so posts with
-  attachments are skipped (with a reason) rather than silently losing images.
-  Fix would need Outbox to host media somewhere reachable.
-- No dynamic app registration: you paste a client ID/secret from a Meta app.
-- Long-lived tokens expire in ~60 days; refresh (`th_refresh_token`) isn't wired up.
-- The API can't edit published posts, so edits record divergence instead.
-
-## Milestone 4 — More content types
-
-- [ ] Media attachments with alt text (next up). Design: - Attachment files copied into the post's day folder next to the `.md`
-      (`<slug>-<N>-1.jpg`), so the archive stays self-contained plaintext + assets - Frontmatter: `media:` list of `{file, alt}` entries - Mastodon: `POST /api/v2/media` (multipart) → `media_ids[]` on the status - Bluesky: `com.atproto.repo.uploadBlob` → `app.bsky.embed.images` with alt - Composer: attach via file picker, per-image alt text fields, previews - Limits per network (Mastodon 4 images; Bluesky 4 images ≤1MB — verify)
-- [ ] Content warnings / spoiler text (Mastodon), labels (Bluesky)
-- [ ] Cross-network thread follow-ups: use `composition` to find sibling files and
-      reply per-network to each sibling automatically
+- [ ] Content warnings / spoiler text (Mastodon), self-labels (Bluesky)
+- [ ] Cross-network thread follow-ups: reply to each sibling copy automatically
+      from one composition, rather than one network at a time
 - [ ] Quote posts
+- [ ] Scheduled posts
 
-## Milestone 5 — More networks
+### More networks
 
-- [ ] IndieWeb Micropub + IndieAuth — excavate packages from
-      `z_Outbox_previously/Outbox 1` (add PKCE, inject transport, real compliance tests)
-- [ ] Threads for real (Meta app review required)
+- [ ] IndieWeb Micropub + IndieAuth — excavate the packages from
+      `z_Outbox_previously/Outbox 1` (add PKCE, inject transport, honest tests)
+- [ ] Threads media, which needs Outbox to host files at a public URL
 - [ ] Blogging: WordPress, Tumblr, Ghost
 - [ ] Email (newsletter-style; SMTP or provider APIs)
 - [ ] Instagram (if ever possible)
 
-## Milestone 6 — Ship
+### Ship
 
-- [ ] App icon, name check, App Store metadata
+- [ ] App icon (the asset catalog has an empty `AppIcon` placeholder)
+- [ ] iPhone/iPad layout pass; the app builds for iOS but hasn't been run there
+- [ ] CI workflow running `script/cibuild`
 - [ ] Direct distribution first (Developer ID + notarization), App Store after
 - [ ] Sparkle or TestFlight story for updates
-- [ ] Onboarding: first-run explains file-first philosophy
+- [ ] Onboarding: first run explains the file-first philosophy
+- [ ] Threads needs Meta app review before anyone but you can use it
 
 ---
+
+## Lessons already paid for
+
+- **Mastodon scopes are per-resource.** `write:statuses` doesn't cover media;
+  uploads need `write:media`. Reading your own posts needs `read:statuses`, and
+  reply resolution needs `read:search`. Changing scopes means re-authorizing
+  every existing token — hence the Reconnect button.
+- **macOS `List` won't animate structural changes**, which is why the sidebar is
+  hand-rolled rows in a `ScrollView`.
+- **Text views eat Tab** before SwiftUI key handling, so field-to-field hops go
+  through an AppKit event monitor (`TabHopModifier`).
+- **Hierarchical shape styles** (`.primary`, `.background`) render as vibrant
+  materials in some contexts and wash out; brand colors use concrete values.
+- **The data-protection Keychain needs a real signing identity**, so local builds
+  sign with the development team rather than ad-hoc.
 
 ## Prior art notes (excavated 2026-07-31)
 
@@ -216,114 +185,19 @@ From `~/Developer/dark-energy/z_Outbox_previously`:
 **Worth keeping**
 
 - `Outbox 1/Micropub` (403 LOC) + `Outbox 1/IndieAuth` (252 LOC): genuinely working
-  clients for Milestone 5. Need PKCE, URLSession injection, honest tests.
+  clients for the IndieWeb milestone. Need PKCE, URLSession injection, honest tests.
 - `Outbox 1/test-server/server.rb`: Sinatra IndieAuth provider bootable from Swift
   tests (subprocess + poll-until-ready) — reusable harness pattern for fake servers.
 - `Outbox 1/README.md`: product vision + curated spec links.
-- `Outbox/Views/EditorView.swift`: DispatchSource file-watcher (small, correct).
-- `.swift-format` config (already copied into this repo).
+- `Outbox/Views/EditorView.swift`: DispatchSource file-watcher, for watching the
+  archive folder later.
 
-**Dead ends to avoid (lessons applied here)**
+**Dead ends avoided**
 
 - Packages never wired into the app → the two halves never met. Wire early.
 - In-memory singleton DataStore, `"drafts"` magic strings → untestable thrash.
-- `ENABLE_APP_SANDBOX = NO` + bare folder path in UserDefaults → use
+- `ENABLE_APP_SANDBOX = NO` + a bare folder path in UserDefaults → use
   security-scoped bookmarks instead.
-- UI claiming "credentials stored securely" while discarding them. Never ship that.
-- Zero Mastodon/Bluesky/network code existed in either attempt — all written fresh here.
-- Inflated test claims (micropub.rocks "compliance" tests that assert
-  `token.count > 0`). Re-verify against real servers.
-
----
-
-Local file:
-
-- [ ] Longer slug in file name
-
-Attached media:
-
-- [ ] Show thumbnail of attached image/etc in new Post form
-
-Settings:
-
-- [ ] Accounts: Only show `Reconnect` button if Mastodon account _needs_ reconnecting. It being there makes me think that I SHOULD click it.
-
-Settings > Display:
-
-- [ ] General > Display: Make Display its own Settings tab
-- [ ] Show an example Post which gets changed as each display setting is changed
-- [ ] Add a content size setting for Posts column too
-- [ ] Add setting for Post details, to use New York font for Post.content. Default: SF
-
-Settings > Tools:
-
-- [ ] Import— show a "Last imported at…" on each one that's been used.
-- [ ] Add a Stop button
-- [ ] Can we pull both Tools out of Settings and into their own little window, and new Menu (Tools > Import from Sites, Tools > Find Duplicates)
-
-Posts column:
-
-- [ ] Double the current vertical padding inside of a Post row
-- [ ] Move timestamp from right/end, to left/start, on a line above the social icons: - Content - Timestamp - Draft pill, social icons
-
-Threading:
-
-- [ ] I'd love to group linked threads of Posts into a visible presentation of their linked threadedness. Kinda like Reddit.
-- [ ] Like this:
-  - [ ] Post 1
-    - [ ] Post 2, in reply to Post 1
-    - [ ] Post 3, in reply to Post 2
-    - [ ] Post 4, in reply to Post 3
-  - [ ] Post 5, unrelated to the other
-- [ ] An obvious question that comes up: what happens to posts in a thread that are chronologically after other posts NOT in the thread? Do they get hoisted up out of the normal timeline feed?
-- [ ] Can threading be a UI setting toggle? Thread Posts yes: (default) / no: shows all Posts flat, chronologically
-
-# Future features
-
-Lists:
-
-- [ ] Lists (like playlists, albums)
-- [ ] All local, no upstream push of Lists
-- [ ] List can be global or scoped to an account
-- [ ] Manually add a Post to any List
-- [ ] Post can be in zero, one, or many Lists
-- [ ] Smart Lists:
-  - [ ] Autopopulated
-  - [ ] A search query builder thing, like iTunes
-  - [ ] Schema defined attributes (dates, account, hashtags, media, URLs, mentions,...)
-  - [ ] Free form search
-
-Post details/show view:
-
-- [ ] Improve the design, feels …fine now. But disjointed, fragmented.
-- [ ] Maybeeee… leave simple useful metadata in view (social icons, not account name of URL)
-  - [ ] and put the full details metadata details in a hidable Inspector panel
-  - [ ] Make clearer `Edit this Post` icon from `New Post` icon
-    - [ ] Separate `New Post` from button group, slide it to start/left of title bar area
-- [ ] Embed attached media in details views
-- [ ] Embed linked media (YouTube URLs, image URLs, etc)
-  - [ ] Download personal cache copy of linked/embeded media (yt-dlp, etc)
-    - [ ] Settings section to check for `brew`, install `brew`, install `yt-dlp`, default/preferred filetypes for video, audio
-
-Richer form editor:
-
-- [ ] Live preview of what a Post will look like on target sites
-- [ ] A way to manually control the slice/dice a Post differently for different target networks (eg, a longer single Post to Masto, two half size threaded Posts to Bluesky. etc)
-
-Rich social media aware Contacts app:
-
-- [ ] Already started somewhere else
-- [ ] Goal: I can tag the person I know of as "Shane", then his correct @handle is used for each syndicated copy.
-- [ ] How to "@tag"/reference people in the stored file version of a Post? A human name with footnote, footnote lists all the handles/site? Eg:
-  - [ ] Today, I met Shane^[shane].
-  - [ ] ^[shane]: | Mastodon: @veganstraightedge.ruby.social, Bluesky: @veganstraightedge.com, Threads: @veganstraightedge, Website: https://veganstraightedge.com
-- [ ] Or maybe a Markdown link with extra handle in the link "title", which get extracted for POSSEed copies. And rendered as inline icons in local? I dunno.
-- [ ] TBD
-
-Feed Me, See More:
-
-- Separate app: Feed Me, See More.
-- An everything reader. All feeds/subs in one place.
-- Only relates to Outbox for two way integration:
-- From Feed Me… "Reply to this in Outbox" or something. To go from feed reading, to isolated writing.
-- From Outbox… "Go to Post in reader" or something. To go from isolated writing, to full sensory feed reading.
+- UI claiming "credentials stored securely" while discarding them.
+- Inflated test claims (micropub.rocks "compliance" tests asserting
+  `token.count > 0`). Verify against real servers.
