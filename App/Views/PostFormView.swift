@@ -13,6 +13,7 @@ struct PostFormView: View {
 
   @Environment(AppModel.self) private var model
   @FocusState private var isContentFocused: Bool
+  @FocusState private var isReplyFieldFocused: Bool
   @State private var confirmingDelete = false
   @State private var errorMessage: String?
   @State private var isWorking = false
@@ -130,6 +131,12 @@ struct PostFormView: View {
         TextField("In reply to (paste a Mastodon or Bluesky post URL)", text: $replyURLText)
           .textFieldStyle(.plain)
           .font(.title3)
+          .focused($isReplyFieldFocused)
+          .onKeyPress { press in
+            guard press.key == .tab, !press.modifiers.contains(.shift) else { return .ignored }
+            isContentFocused = true
+            return .handled
+          }
           .padding(.horizontal, 16)
           .padding(.vertical, 12)
       }
@@ -137,6 +144,13 @@ struct PostFormView: View {
       TextEditor(text: $text)
         .font(.title3)
         .focused($isContentFocused)
+        .onKeyPress { press in
+          guard press.key == .tab, press.modifiers.contains(.shift), hasReplyField else {
+            return .ignored
+          }
+          isReplyFieldFocused = true
+          return .handled
+        }
         .scrollContentBackground(.hidden)
         .padding(.horizontal, 11)
         .padding(.vertical, 8)
@@ -295,6 +309,12 @@ struct PostFormView: View {
   private var isNew: Bool {
     if case .new = mode { return true }
     return false
+  }
+
+  /// The reply URL field exists for new posts and drafts, but not thread continuations.
+  private var hasReplyField: Bool {
+    if case .new(.thread) = mode { return false }
+    return isNew || isEditableDraft
   }
 
   private var isEditableDraft: Bool {
