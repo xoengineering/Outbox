@@ -2,13 +2,6 @@ import Foundation
 import Observation
 import OutboxKit
 
-/// One avatar + network pairing a post touches, for row footers.
-struct EndpointPair: Identifiable {
-  let id: String
-  var avatarURL: URL?
-  var network: Network
-}
-
 /// App-wide state: configured accounts, the loaded archive, selection, and the
 /// wiring between the archive folder, Keychain, and Publisher.
 @MainActor @Observable final class AppModel {
