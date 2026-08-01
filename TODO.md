@@ -236,6 +236,10 @@ From `~/Developer/dark-energy/z_Outbox_previously`:
 
 ---
 
+Local file:
+
+- [ ] Longer slug in file name
+
 Attached media:
 
 - [ ] Show thumbnail of attached image/etc in new Post form

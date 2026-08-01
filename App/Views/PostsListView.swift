@@ -73,7 +73,13 @@ struct PostsListView: View {
             Task { await model.toggleFavorite(post) }
           }
           return .handled
-        case .upArrow, .downArrow, .escape, .return:
+        case .return:
+          // Return opens the editor, alongside ⌘E.
+          if let post = model.selectedPost {
+            model.detailMode = .edit(post)
+          }
+          return .handled
+        case .upArrow, .downArrow, .escape:
           return .ignored
         default:
           // Swallow everything else so the List's type-to-select can't jump around.
