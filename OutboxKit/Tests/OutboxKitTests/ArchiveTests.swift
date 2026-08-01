@@ -14,10 +14,8 @@ import Testing
   }
 
   @Test func readsAllPostsNewestFirst() throws {
-    let older = draft(body: "First post\n", createdAt: "2026-09-17T10:00:00Z")
-    let newer = draft(body: "Second post\n", createdAt: "2026-09-18T10:00:00Z")
-    try store.save(older)
-    try store.save(newer)
+    try store.save(draft(body: "First post\n", createdAt: "2026-09-17T10:00:00Z"))
+    try store.save(draft(body: "Second post\n", createdAt: "2026-09-18T10:00:00Z"))
 
     let posts = try store.allPosts()
 
@@ -50,39 +48,24 @@ import Testing
   }
 
   @Test func roundTripsFavoriteFlag() throws {
-    let text = try #require(
-      Bundle.module.url(
-        forResource: "bluesky-favorite-draft.md", withExtension: nil, subdirectory: "Fixtures"
-      )
-      .map { try String(contentsOf: $0, encoding: .utf8) })
-    let file = try PostFile.parse(text)
+    var file = draft(body: "A keeper\n", createdAt: "2026-09-18T10:00:00Z")
+    file.metadata.isFavorite = true
+    let url = try store.save(file)
 
-    #expect(file.metadata.isFavorite)
-    #expect(try file.serialized() == text)
+    let reloaded = try PostFile.parse(String(contentsOf: url, encoding: .utf8))
+    #expect(reloaded.metadata.isFavorite)
 
-    var unfavorited = file
+    var unfavorited = reloaded
     unfavorited.metadata.isFavorite = false
     #expect(try !unfavorited.serialized().contains("favorite:"))
-  }
-
-  @Test func roundTripsReplyAndCompositionFields() throws {
-    let text = try #require(
-      Bundle.module.url(forResource: "mastodon-reply-draft.md", withExtension: nil, subdirectory: "Fixtures")
-        .map { try String(contentsOf: $0, encoding: .utf8) })
-    let file = try PostFile.parse(text)
-
-    #expect(file.metadata.compositionID == UUID(uuidString: "0B426700-2C1A-4E9F-8D5B-111122223333"))
-    #expect(file.metadata.inReplyTo == URL(string: "https://ruby.social/@someone/115000000000000001"))
-    #expect(try file.serialized() == text)
   }
 
   private func draft(body: String, createdAt: String) -> PostFile {
     PostFile(
       body: body,
       metadata: PostMetadata(
-        account: "@veganstraightedge.com",
         createdAt: Date.iso8601(createdAt),
-        network: .bluesky
+        targets: [Endpoint(account: "@veganstraightedge.com", network: .bluesky)]
       )
     )
   }

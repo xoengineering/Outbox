@@ -2,7 +2,8 @@ import Foundation
 
 /// Writes post files into the on-disk archive.
 ///
-/// Layout: `<base>/<Network>/<account>/<YYYY>/<MM>/<DD>/<slug>-<NthOfDay>.md`
+/// Layout: `<base>/<YYYY>/<MM>/<DD>/<slug>-<NthOfDay>.md` — one file per Post;
+/// network copies live inside its frontmatter.
 public struct PostStore: Sendable {
   public var baseDirectory: URL
   public var timeZone: TimeZone
@@ -65,6 +66,14 @@ public struct PostStore: Sendable {
     try FileManager.default.removeItem(at: post.fileURL)
   }
 
+  /// The archive-relative path of a file, used for `in_reply_to_post` references.
+  public func relativePath(of fileURL: URL) -> String {
+    let base = baseDirectory.standardizedFileURL.path
+    let full = fileURL.standardizedFileURL.path
+    guard full.hasPrefix(base) else { return full }
+    return String(full.dropFirst(base.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+  }
+
   private func dayDirectory(for metadata: PostMetadata) -> URL {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = timeZone
@@ -72,8 +81,6 @@ public struct PostStore: Sendable {
 
     return
       baseDirectory
-      .appendingPathComponent(metadata.network.folderName, isDirectory: true)
-      .appendingPathComponent(metadata.account, isDirectory: true)
       .appendingPathComponent(String(format: "%04d", components.year!), isDirectory: true)
       .appendingPathComponent(String(format: "%02d", components.month!), isDirectory: true)
       .appendingPathComponent(String(format: "%02d", components.day!), isDirectory: true)

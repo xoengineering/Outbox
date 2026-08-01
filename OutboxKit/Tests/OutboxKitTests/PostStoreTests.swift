@@ -13,21 +13,18 @@ import Testing
     store = PostStore(baseDirectory: baseDirectory, timeZone: TimeZone(identifier: "UTC")!)
   }
 
-  @Test func savesUnderNetworkAccountAndDatePath() throws {
-    let file = draft(account: "@veganstraightedge@ruby.social", network: .mastodon)
-    let url = try store.save(file)
+  @Test func savesUnderDatePath() throws {
+    let url = try store.save(draft())
 
-    let expectedPath = "Mastodon/@veganstraightedge@ruby.social/2026/09/18/happy-bday-to-me-1.md"
+    let expectedPath = "2026/09/18/happy-bday-to-me-1.md"
     #expect(url == baseDirectory.appendingPathComponent(expectedPath))
-    #expect(try PostFile.parse(String(contentsOf: url, encoding: .utf8)) == file)
+    #expect(store.relativePath(of: url) == expectedPath)
+    #expect(try PostFile.parse(String(contentsOf: url, encoding: .utf8)) == draft())
   }
 
   @Test func numbersMultiplePostsOnTheSameDay() throws {
-    let first = draft(body: "Happy bday to me. 🎂\n")
-    let second = draft(body: "Blowing out candles now.\n")
-
-    let firstURL = try store.save(first)
-    let secondURL = try store.save(second)
+    let firstURL = try store.save(draft(body: "Happy bday to me. 🎂\n"))
+    let secondURL = try store.save(draft(body: "Blowing out candles now.\n"))
 
     #expect(firstURL.lastPathComponent == "happy-bday-to-me-1.md")
     #expect(secondURL.lastPathComponent == "blowing-out-candles-now-2.md")
@@ -37,25 +34,30 @@ import Testing
     var file = draft()
     let url = try store.save(file)
 
-    file.metadata.publishedAt = Date.iso8601("2026-09-18T17:32:05Z")
+    file.metadata.syndication.append(
+      Syndication(
+        account: "@veganstraightedge.com",
+        network: .bluesky,
+        publishedAt: Date.iso8601("2026-09-18T17:32:05Z"),
+        remoteID: "at://did:plc:abc/app.bsky.feed.post/3k7q"
+      ))
+    file.metadata.targets.removeAll()
     try store.save(file, to: url)
 
     let reloaded = try PostFile.parse(String(contentsOf: url, encoding: .utf8))
-    #expect(reloaded.metadata.publishedAt == Date.iso8601("2026-09-18T17:32:05Z"))
+    #expect(reloaded.metadata.isPublished)
+    #expect(reloaded.metadata.targets.isEmpty)
     let siblings = try FileManager.default.contentsOfDirectory(atPath: url.deletingLastPathComponent().path)
     #expect(siblings == ["happy-bday-to-me-1.md"])
   }
 
-  private func draft(
-    account: String = "@veganstraightedge.com",
-    body: String = "Happy bday to me. 🎂\n",
-    network: Network = .bluesky
-  ) -> PostFile {
-    let metadata = PostMetadata(
-      account: account,
-      createdAt: Date.iso8601("2026-09-18T17:32:00Z"),
-      network: network
+  private func draft(body: String = "Happy bday to me. 🎂\n") -> PostFile {
+    PostFile(
+      body: body,
+      metadata: PostMetadata(
+        createdAt: Date.iso8601("2026-09-18T17:32:00Z"),
+        targets: [Endpoint(account: "@veganstraightedge.com", network: .bluesky)]
+      )
     )
-    return PostFile(body: body, metadata: metadata)
   }
 }

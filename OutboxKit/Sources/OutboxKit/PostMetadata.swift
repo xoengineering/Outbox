@@ -1,42 +1,41 @@
 import Foundation
 
-/// The YAML frontmatter of a post file: which account it belongs to,
-/// when it was written, and — once syndicated — where it lives remotely.
+/// The YAML frontmatter of a Post: one canonical body, with the places it
+/// should go (`targets`) and the copies that exist (`syndication`).
 public struct PostMetadata: Equatable, Sendable {
-  public var account: String
-  /// Shared ID linking sibling files created by one crosspost.
-  public var compositionID: UUID?
   public var createdAt: Date
-  /// Remote URL of the post this one replies to.
+  /// Remote URL of someone else's post this one replies to.
   public var inReplyTo: URL?
+  /// Archive-relative path of our own Post this one continues (a thread).
+  public var inReplyToPost: String?
   /// Starred within Outbox as a writing tool; never sent to any network.
   public var isFavorite: Bool
-  public var network: Network
-  public var publishedAt: Date?
-  public var remoteID: String?
-  public var remoteURL: URL?
+  /// Copies that exist on networks.
+  public var syndication: [Syndication]
+  /// Destinations still owed a copy.
+  public var targets: [Endpoint]
 
   public init(
-    account: String,
-    compositionID: UUID? = nil,
     createdAt: Date,
     inReplyTo: URL? = nil,
+    inReplyToPost: String? = nil,
     isFavorite: Bool = false,
-    network: Network,
-    publishedAt: Date? = nil,
-    remoteID: String? = nil,
-    remoteURL: URL? = nil
+    syndication: [Syndication] = [],
+    targets: [Endpoint] = []
   ) {
-    self.account = account
-    self.compositionID = compositionID
     self.createdAt = createdAt
     self.inReplyTo = inReplyTo
+    self.inReplyToPost = inReplyToPost
     self.isFavorite = isFavorite
-    self.network = network
-    self.publishedAt = publishedAt
-    self.remoteID = remoteID
-    self.remoteURL = remoteURL
+    self.syndication = syndication
+    self.targets = targets
   }
 
-  public var isPublished: Bool { publishedAt != nil }
+  public var isPublished: Bool { !syndication.isEmpty }
+
+  /// Every endpoint this post touches: existing copies first, then pending targets.
+  public var endpoints: [Endpoint] {
+    var seen = Set<Endpoint>()
+    return (syndication.map(\.endpoint) + targets).filter { seen.insert($0).inserted }
+  }
 }

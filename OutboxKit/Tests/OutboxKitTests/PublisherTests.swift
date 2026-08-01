@@ -13,147 +13,127 @@ import Testing
     store = PostStore(baseDirectory: baseDirectory, timeZone: TimeZone(identifier: "UTC")!)
   }
 
-  @Test func writesFileThenUpdatesItWithReceipt() async throws {
-    let receipt = PublishReceipt(
+  @Test func writesOneFileAndAppendsSyndicationPerTarget() async throws {
+    let blueskyReceipt = PublishReceipt(
       publishedAt: Date.iso8601("2026-09-18T17:32:05Z"),
       remoteID: "at://did:plc:abc/app.bsky.feed.post/3k7q",
       remoteURL: URL(string: "https://bsky.app/profile/veganstraightedge.com/post/3k7q")
     )
-    let publisher = makePublisher(
-      adapters: [.bluesky: StubAdapter(network: .bluesky, result: .success(.published(receipt)))]
+    let mastodonReceipt = PublishReceipt(
+      publishedAt: Date.iso8601("2026-09-18T17:32:06Z"),
+      remoteID: "115234567890123456",
+      remoteURL: URL(string: "https://ruby.social/@veganstraightedge/115234567890123456")
     )
+    let publisher = makePublisher(adapters: [
+      .bluesky: StubAdapter(network: .bluesky, result: .success(.published(blueskyReceipt))),
+      .mastodon: StubAdapter(network: .mastodon, result: .success(.published(mastodonReceipt))),
+    ])
 
-    let results = await publisher.publish(body: "Happy bday to me. 🎂\n", to: [blueskyTarget])
+    let output = await publisher.publish(body: "Happy bday to me. 🎂\n", to: [blueskyTarget, mastodonTarget])
 
-    #expect(results.count == 1)
-    let fileURL = try #require(results[0].fileURL)
+    let fileURL = try #require(output.fileURL)
+    #expect(output.results.count == 2)
     let file = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
-    #expect(file.metadata.publishedAt == receipt.publishedAt)
-    #expect(file.metadata.remoteID == receipt.remoteID)
-    #expect(file.metadata.remoteURL == receipt.remoteURL)
-    #expect(file.metadata.compositionID == nil)
+    #expect(file.metadata.syndication.count == 2)
+    #expect(file.metadata.targets.isEmpty)
+    #expect(file.metadata.syndication[0].remoteID == blueskyReceipt.remoteID)
+    #expect(file.metadata.syndication[1].remoteID == mastodonReceipt.remoteID)
+
+    // Exactly one file exists in the whole archive.
+    #expect(try store.allPosts().count == 1)
   }
 
-  @Test func keepsLocalFileWhenNetworkFails() async throws {
-    let publisher = makePublisher(
-      adapters: [.bluesky: StubAdapter(network: .bluesky, result: .failure(AdapterError.invalidResponse))]
-    )
+  @Test func failedTargetStaysPendingSoRepublishRetriesIt() async throws {
+    let receipt = PublishReceipt(publishedAt: Date.iso8601("2026-09-18T17:32:05Z"), remoteID: "1")
+    let publisher = makePublisher(adapters: [
+      .bluesky: StubAdapter(network: .bluesky, result: .failure(AdapterError.invalidResponse)),
+      .mastodon: StubAdapter(network: .mastodon, result: .success(.published(receipt))),
+    ])
 
-    let results = await publisher.publish(body: "Happy bday to me. 🎂\n", to: [blueskyTarget])
+    let output = await publisher.publish(body: "hi\n", to: [blueskyTarget, mastodonTarget])
 
-    let fileURL = try #require(results[0].fileURL)
+    let fileURL = try #require(output.fileURL)
     let file = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
-    #expect(file.metadata.publishedAt == nil)
-    guard case .failure = results[0].outcome else {
-      Issue.record("Expected .failure outcome")
-      return
-    }
+    #expect(file.metadata.syndication.map(\.network) == [.mastodon])
+    #expect(file.metadata.targets == [Endpoint(account: "@veganstraightedge.com", network: .bluesky)])
+
+    // Retry just the pending target.
+    let retryPublisher = makePublisher(adapters: [
+      .bluesky: StubAdapter(network: .bluesky, result: .success(.published(receipt)))
+    ])
+    let stored = StoredPost(file: file, fileURL: fileURL)
+    let retry = await retryPublisher.publishExisting(stored, to: [blueskyTarget])
+
+    #expect(retry.results.count == 1)
+    let updated = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
+    #expect(updated.metadata.syndication.count == 2)
+    #expect(updated.metadata.targets.isEmpty)
   }
 
-  @Test func oneFailingTargetDoesNotBlockOthers() async throws {
-    let receipt = PublishReceipt(publishedAt: Date.iso8601("2026-09-18T17:32:05Z"), remoteID: "1")
-    let publisher = makePublisher(
-      adapters: [
-        .bluesky: StubAdapter(network: .bluesky, result: .failure(AdapterError.invalidResponse)),
-        .mastodon: StubAdapter(network: .mastodon, result: .success(.published(receipt))),
-      ]
+  @Test func skippedTargetStaysPending() async throws {
+    let publisher = makePublisher(adapters: [.threads: ThreadsAdapter()])
+    let threadsTarget = Publisher.Target(
+      account: Account(
+        handle: "@veganstraightedge",
+        network: .threads,
+        serverURL: URL(string: "https://www.threads.net")!
+      ),
+      credential: .none
     )
 
-    let results = await publisher.publish(body: "hi\n", to: [blueskyTarget, mastodonTarget])
+    let output = await publisher.publish(body: "hi\n", to: [threadsTarget])
 
-    guard case .failure = results[0].outcome else {
-      Issue.record("Expected first target to fail")
-      return
-    }
-    guard case .success(.published) = results[1].outcome else {
-      Issue.record("Expected second target to publish")
+    let fileURL = try #require(output.fileURL)
+    let file = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
+    #expect(file.metadata.syndication.isEmpty)
+    #expect(file.metadata.targets == [Endpoint(account: "@veganstraightedge", network: .threads)])
+    guard case .success(.skipped) = output.results[0].outcome else {
+      Issue.record("Expected .skipped outcome")
       return
     }
   }
 
-  @Test func crosspostsShareOneCompositionID() async throws {
-    let receipt = PublishReceipt(publishedAt: Date.iso8601("2026-09-18T17:32:05Z"), remoteID: "1")
-    let sharedID = UUID(uuidString: "0B426700-2C1A-4E9F-8D5B-111122223333")!
-    let publisher = makePublisher(
-      adapters: [
-        .bluesky: StubAdapter(network: .bluesky, result: .success(.published(receipt))),
-        .mastodon: StubAdapter(network: .mastodon, result: .success(.published(receipt))),
-      ],
-      makeCompositionID: { sharedID }
-    )
-
-    let results = await publisher.publish(body: "hi\n", to: [blueskyTarget, mastodonTarget])
-
-    for result in results {
-      let fileURL = try #require(result.fileURL)
-      let file = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
-      #expect(file.metadata.compositionID == sharedID)
-    }
-  }
-
-  @Test func resolvesReplyURLAndPassesItToAdapter() async throws {
+  @Test func resolvesPerTargetReplyParents() async throws {
     let receipt = PublishReceipt(publishedAt: Date.iso8601("2026-09-18T17:32:05Z"), remoteID: "1")
     let adapter = StubAdapter(network: .mastodon, result: .success(.published(receipt)))
-    let replyURL = URL(string: "https://ruby.social/@someone/115000000000000001")!
+    let parentURL = URL(string: "https://ruby.social/@veganstraightedge/115000000000000001")!
     let publisher = makePublisher(
       adapters: [.mastodon: adapter],
       replyResolver: StubResolver(resolved: .mastodon(statusID: "115000000000000001"))
     )
 
-    let results = await publisher.publish(body: "Replying!\n", replyTo: replyURL, to: [mastodonTarget])
+    var target = mastodonTarget
+    target.replyParentURL = parentURL
+    let output = await publisher.publish(
+      body: "One more thing.\n",
+      inReplyToPost: "2026/09/18/happy-bday-to-me-1.md",
+      to: [target]
+    )
 
-    let fileURL = try #require(results[0].fileURL)
+    let fileURL = try #require(output.fileURL)
     let file = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
-    #expect(file.metadata.inReplyTo == replyURL)
+    #expect(file.metadata.inReplyToPost == "2026/09/18/happy-bday-to-me-1.md")
     #expect(adapter.receivedPosts.first?.replyTo == .mastodon(statusID: "115000000000000001"))
   }
 
-  @Test func savesDraftsWithoutTouchingAdapters() throws {
+  @Test func saveDraftWritesOneFileWithoutAdapters() throws {
     let publisher = makePublisher(adapters: [:])
 
-    let results = publisher.saveDrafts(body: "Draft only\n", for: [blueskyTarget, mastodonTarget])
+    let output = publisher.saveDraft(body: "Draft only\n", for: [blueskyTarget, mastodonTarget])
 
-    #expect(results.count == 2)
-    for result in results {
-      let fileURL = try #require(result.fileURL)
-      let file = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
-      #expect(file.metadata.publishedAt == nil)
-      #expect(file.metadata.compositionID != nil)
-    }
-  }
-
-  @Test func publishExistingUpdatesTheDraftInPlace() async throws {
-    let publisher = makePublisher(adapters: [:])
-    let draftURL = try #require(publisher.saveDrafts(body: "Draft first\n", for: [blueskyTarget])[0].fileURL)
-    let stored = StoredPost(
-      file: try PostFile.parse(String(contentsOf: draftURL, encoding: .utf8)),
-      fileURL: draftURL
-    )
-
-    let receipt = PublishReceipt(
-      publishedAt: Date.iso8601("2026-09-18T17:32:05Z"),
-      remoteID: "at://did:plc:abc/app.bsky.feed.post/3k7q"
-    )
-    let publishing = makePublisher(
-      adapters: [.bluesky: StubAdapter(network: .bluesky, result: .success(.published(receipt)))]
-    )
-
-    let result = await publishing.publishExisting(stored, target: blueskyTarget)
-
-    #expect(result.fileURL == draftURL)
-    let file = try PostFile.parse(String(contentsOf: draftURL, encoding: .utf8))
-    #expect(file.metadata.publishedAt == receipt.publishedAt)
-    #expect(file.metadata.remoteID == receipt.remoteID)
+    let fileURL = try #require(output.fileURL)
+    let file = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
+    #expect(file.metadata.syndication.isEmpty)
+    #expect(file.metadata.targets.count == 2)
+    #expect(try store.allPosts().count == 1)
   }
 
   private func makePublisher(
     adapters: [Network: any SocialServiceAdapter],
-    makeCompositionID: @escaping @Sendable () -> UUID = { UUID() },
     replyResolver: any ReplyResolving = StubResolver(resolved: nil)
   ) -> Publisher {
     Publisher(
       adapters: adapters,
-      makeCompositionID: makeCompositionID,
       now: { Date.iso8601("2026-09-18T17:32:00Z") },
       replyResolver: replyResolver,
       store: store

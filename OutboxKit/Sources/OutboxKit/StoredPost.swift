@@ -20,4 +20,9 @@ public struct StoredPost: Equatable, Identifiable, Sendable {
   public var status: Status {
     file.metadata.isPublished ? .published : .draft
   }
+
+  /// Copies exist but some targets are still owed one.
+  public var hasPendingTargets: Bool {
+    !file.metadata.targets.isEmpty
+  }
 }

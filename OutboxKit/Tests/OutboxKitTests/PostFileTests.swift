@@ -5,48 +5,63 @@ import Testing
 
 @Suite struct PostFileTests {
   @Test func parsesPublishedFixture() throws {
-    let text = try fixture("mastodon-published.md")
-    let file = try PostFile.parse(text)
+    let file = try PostFile.parse(try fixture("post-published.md"))
 
-    #expect(file.metadata.network == .mastodon)
-    #expect(file.metadata.account == "@veganstraightedge@ruby.social")
     #expect(file.metadata.createdAt == Date.iso8601("2026-09-18T17:32:00Z"))
-    #expect(file.metadata.publishedAt == Date.iso8601("2026-09-18T17:32:05Z"))
-    #expect(file.metadata.remoteID == "115234567890123456")
-    #expect(
-      file.metadata.remoteURL
-        == URL(string: "https://ruby.social/@veganstraightedge/115234567890123456"))
+    #expect(file.metadata.targets.isEmpty)
+    #expect(file.metadata.syndication.count == 2)
+
+    let mastodon = file.metadata.syndication[0]
+    #expect(mastodon.network == .mastodon)
+    #expect(mastodon.account == "@veganstraightedge@ruby.social")
+    #expect(mastodon.publishedAt == Date.iso8601("2026-09-18T17:32:05Z"))
+    #expect(mastodon.remoteID == "115234567890123456")
+    #expect(mastodon.remoteURL == URL(string: "https://ruby.social/@veganstraightedge/115234567890123456"))
+    #expect(mastodon.text == nil)
+
+    let bluesky = file.metadata.syndication[1]
+    #expect(bluesky.network == .bluesky)
+    #expect(bluesky.text == "Happy bday to me. 🎂\nThirty-nine laps around the sun.")
+
     #expect(file.body == "Happy bday to me. 🎂\n\nThirty-nine laps around the sun.\n")
   }
 
-  @Test func parsesDraftFixtureWithoutPublicationFields() throws {
-    let text = try fixture("bluesky-draft.md")
-    let file = try PostFile.parse(text)
+  @Test func parsesDraftFixtureWithTargets() throws {
+    let file = try PostFile.parse(try fixture("post-draft.md"))
 
-    #expect(file.metadata.network == .bluesky)
-    #expect(file.metadata.account == "@veganstraightedge.com")
-    #expect(file.metadata.publishedAt == nil)
-    #expect(file.metadata.remoteID == nil)
-    #expect(file.metadata.remoteURL == nil)
+    #expect(file.metadata.isFavorite)
+    #expect(file.metadata.syndication.isEmpty)
+    #expect(
+      file.metadata.targets == [
+        Endpoint(account: "@veganstraightedge.com", network: .bluesky),
+        Endpoint(account: "@veganstraightedge", network: .threads),
+      ])
     #expect(file.body == "Happy bday to me. 🎂\n")
   }
 
-  @Test func roundTripsThroughSerialization() throws {
-    let original = try PostFile.parse(try fixture("mastodon-published.md"))
-    let reparsed = try PostFile.parse(try original.serialized())
+  @Test func parsesReplyReferences() throws {
+    let thread = try PostFile.parse(try fixture("post-thread-reply.md"))
+    #expect(thread.metadata.inReplyToPost == "2026/09/18/happy-bday-to-me-1.md")
+    #expect(thread.metadata.inReplyTo == nil)
 
-    #expect(reparsed == original)
+    let external = try PostFile.parse(try fixture("post-external-reply.md"))
+    #expect(external.metadata.inReplyTo == URL(string: "https://ruby.social/@someone/115000000000000001"))
+    #expect(external.metadata.inReplyToPost == nil)
   }
 
-  @Test func serializedDraftMatchesFixtureExactly() throws {
-    let metadata = PostMetadata(
-      account: "@veganstraightedge.com",
-      createdAt: Date.iso8601("2026-09-18T17:32:00Z"),
-      network: .bluesky
-    )
-    let file = PostFile(body: "Happy bday to me. 🎂\n", metadata: metadata)
+  @Test func roundTripsAllFixturesExactly() throws {
+    for name in ["post-published.md", "post-draft.md", "post-thread-reply.md", "post-external-reply.md"] {
+      let text = try fixture(name)
+      let file = try PostFile.parse(text)
+      #expect(try file.serialized() == text, "byte-stable round trip failed for \(name)")
+    }
+  }
 
-    #expect(try file.serialized() == (try fixture("bluesky-draft.md")))
+  @Test func rejectsLegacyPerCopyFormat() throws {
+    let legacy = try fixture("Legacy/legacy-mastodon-published.md")
+    #expect(throws: PostFile.ParseError.legacyFormat) {
+      try PostFile.parse(legacy)
+    }
   }
 
   @Test func parseRejectsTextWithoutFrontmatter() {
@@ -56,8 +71,10 @@ import Testing
   }
 
   private func fixture(_ name: String) throws -> String {
+    let parts = name.split(separator: "/").map(String.init)
+    let subdirectory = (["Fixtures"] + parts.dropLast()).joined(separator: "/")
     let url = try #require(
-      Bundle.module.url(forResource: name, withExtension: nil, subdirectory: "Fixtures"))
+      Bundle.module.url(forResource: parts.last!, withExtension: nil, subdirectory: subdirectory))
     return try String(contentsOf: url, encoding: .utf8)
   }
 }
