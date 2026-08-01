@@ -21,14 +21,28 @@ struct PostsListView: View {
           post: post
         )
         .listRowSeparator(.hidden)
-        #if os(macOS)
-          .contextMenu {
+        .contextMenu {
+          Button(post.file.metadata.isFavorite ? "Unfavorite" : "Favorite") {
+            Task { await model.toggleFavorite(post) }
+          }
+          Button("Reply") {
+            model.startReply(to: post)
+          }
+          .disabled(!post.file.metadata.isPublished)
+          .keyboardShortcut("r", modifiers: .command)
+          Button("Edit") {
+            model.selectedPostID = post.id
+            model.detailMode = .edit(post)
+          }
+          .keyboardShortcut("e", modifiers: .command)
+          #if os(macOS)
+            Divider()
             Button("Show in Finder") {
               NSWorkspace.shared.activateFileViewerSelecting([post.fileURL])
             }
             .keyboardShortcut("r", modifiers: [.command, .option])
-          }
-        #endif
+          #endif
+        }
       }
       .focused($isFocused)
       // macOS routes ⌃D (the text system's deleteForward:) into the list, where it

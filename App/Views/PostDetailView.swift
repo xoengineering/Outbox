@@ -1,6 +1,10 @@
 import OutboxKit
 import SwiftUI
 
+#if os(macOS)
+  import AppKit
+#endif
+
 /// The "show" view for one Post: canonical content, its copies on networks,
 /// pending targets, and extracted tokens.
 struct PostDetailView: View {
@@ -23,6 +27,7 @@ struct PostDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
           metaLine
           copies
+          filePath
         }
 
         extractedTokens
@@ -53,6 +58,37 @@ struct PostDetailView: View {
         }
       }
     }
+  }
+
+  /// The post's file on disk, clickable to reveal in Finder.
+  @ViewBuilder
+  private var filePath: some View {
+    let relativePath = post.fileURL.path.replacingOccurrences(
+      of: model.archiveFolder.url.path + "/", with: "")
+    #if os(macOS)
+      Button {
+        NSWorkspace.shared.activateFileViewerSelecting([post.fileURL])
+      } label: {
+        Label {
+          Text(relativePath)
+            .font(.caption.monospaced())
+        } icon: {
+          Image(systemName: "doc.text")
+        }
+        .foregroundStyle(.secondary)
+      }
+      .buttonStyle(.plain)
+      .help("Show in Finder")
+    #else
+      Label {
+        Text(relativePath)
+          .font(.caption.monospaced())
+          .textSelection(.enabled)
+      } icon: {
+        Image(systemName: "doc.text")
+      }
+      .foregroundStyle(.secondary)
+    #endif
   }
 
   private var metaLine: some View {
