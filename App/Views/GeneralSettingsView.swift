@@ -9,7 +9,9 @@ import UniformTypeIdentifiers
 struct GeneralSettingsView: View {
   @AppStorage(DateFormatChoice.defaultsKey) private var dateFormat = DateFormatChoice.monthDayYear
   @AppStorage(PostContentSize.defaultsKey) private var contentSize = PostContentSize.medium
+  @AppStorage("MonochromeRowIcons") private var monochromeRowIcons = false
   @AppStorage("ShowsRowAvatars") private var showsRowAvatars = true
+  @AppStorage("ShowsRowNetworkIcons") private var showsRowNetworkIcons = true
   @Environment(AppModel.self) private var model
   @State private var isChoosingFolder = false
 
@@ -47,6 +49,8 @@ struct GeneralSettingsView: View {
 
       Section("Display") {
         Toggle("Show avatars in post list", isOn: $showsRowAvatars)
+        Toggle("Show network icons in post list", isOn: $showsRowNetworkIcons)
+        Toggle("Monochrome post list icons", isOn: $monochromeRowIcons)
         Picker("Date format", selection: $dateFormat) {
           ForEach(DateFormatChoice.allCases) { choice in
             Text(choice.label).tag(choice)

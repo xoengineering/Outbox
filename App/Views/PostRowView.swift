@@ -4,7 +4,9 @@ import SwiftUI
 /// One row in the posts list: content snippet, endpoint pairs, date, and status.
 struct PostRowView: View {
   @AppStorage(DateFormatChoice.defaultsKey) private var dateFormat = DateFormatChoice.monthDayYear
+  @AppStorage("MonochromeRowIcons") private var monochromeRowIcons = false
   @AppStorage("ShowsRowAvatars") private var showsRowAvatars = true
+  @AppStorage("ShowsRowNetworkIcons") private var showsRowNetworkIcons = true
 
   /// True when this row is selected and its list owns focus.
   var isEmphasized = false
@@ -27,20 +29,8 @@ struct PostRowView: View {
             .foregroundStyle(post.status.color)
         }
         ForEach(pairs) { pair in
-          if showsRowAvatars {
-            AvatarNetworkPairView(
-              avatarURL: pair.avatarURL,
-              iconTint: isEmphasized ? Palette.selectedContent : nil,
-              network: pair.network,
-              size: 16
-            )
-          } else {
-            NetworkIconView(
-              network: pair.network,
-              size: 14,
-              tint: isEmphasized ? Palette.selectedContent : nil
-            )
-          }
+          endpointIcon(pair)
+            .grayscale(monochromeRowIcons ? 1 : 0)
         }
         if post.file.metadata.isFavorite {
           Image(systemName: "star.fill")
@@ -58,5 +48,24 @@ struct PostRowView: View {
       .foregroundStyle(.tertiary)
     }
     .padding(.vertical, 6)
+  }
+
+  @ViewBuilder
+  private func endpointIcon(_ pair: EndpointPair) -> some View {
+    if showsRowAvatars {
+      AvatarNetworkPairView(
+        avatarURL: pair.avatarURL,
+        iconTint: isEmphasized ? Palette.selectedContent : nil,
+        network: pair.network,
+        showsNetworkIcon: showsRowNetworkIcons,
+        size: 16
+      )
+    } else if showsRowNetworkIcons {
+      NetworkIconView(
+        network: pair.network,
+        size: 14,
+        tint: isEmphasized ? Palette.selectedContent : nil
+      )
+    }
   }
 }

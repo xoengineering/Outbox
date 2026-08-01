@@ -9,6 +9,7 @@ struct AvatarNetworkPairView: View {
   var avatarURL: URL?
   var iconTint: AnyShapeStyle?
   var network: Network
+  var showsNetworkIcon = true
   var size: CGFloat = 24
 
   var body: some View {
@@ -16,8 +17,10 @@ struct AvatarNetworkPairView: View {
       avatar
         .frame(width: size, height: size)
         .clipShape(Circle())
-      NetworkIconView(network: network, size: size, tint: iconTint)
-        .padding(.horizontal, size * 0.2)
+      if showsNetworkIcon {
+        NetworkIconView(network: network, size: size, tint: iconTint)
+          .padding(.horizontal, size * 0.2)
+      }
     }
     .padding(1)
     .background(Palette.inactiveFill, in: Capsule())
