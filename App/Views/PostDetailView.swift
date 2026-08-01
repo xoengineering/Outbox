@@ -16,7 +16,7 @@ struct PostDetailView: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
-        Text(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
+        Text(AutoLink.attributed(post.file.body.trimmingCharacters(in: .whitespacesAndNewlines)))
           .font(contentSize.font)
           .textSelection(.enabled)
           .frame(maxWidth: .infinity, alignment: .leading)
