@@ -25,6 +25,7 @@ struct PostsListView: View {
           Button(post.file.metadata.isFavorite ? "Unfavorite" : "Favorite") {
             Task { await model.toggleFavorite(post) }
           }
+          .keyboardShortcut(".", modifiers: [])
           Button("Reply") {
             model.startReply(to: post)
           }
