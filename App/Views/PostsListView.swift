@@ -149,14 +149,18 @@ struct PostsListView: View {
       }
     } label: {
       HStack(spacing: 3) {
-        NetworkIconView(network: network, size: 9, tint: isOn ? nil : AnyShapeStyle(.secondary))
+        NetworkIconView(
+          network: network,
+          size: 9,
+          tint: isOn ? network.brandContrastColor : AnyShapeStyle(.secondary)
+        )
         Text(network.displayName)
           .font(.caption2.weight(.semibold))
       }
       .padding(.horizontal, 6)
       .padding(.vertical, 2)
-      .background(Palette.capsuleFill(network.brandColor, isOn: isOn), in: Capsule())
-      .foregroundStyle(Palette.capsuleContent(network.brandColor, isOn: isOn))
+      .background(isOn ? network.brandColor : Palette.inactiveFill, in: Capsule())
+      .foregroundStyle(isOn ? network.brandContrastColor : AnyShapeStyle(.secondary))
     }
     .buttonStyle(.plain)
     .help("Show only \(network.displayName) posts")
