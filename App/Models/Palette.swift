@@ -32,8 +32,6 @@ enum Palette {
   static let unfocusedSelectionFill = AnyShapeStyle(.quaternary)
   /// Background of the post content editor.
   static let editorFill = AnyShapeStyle(.quaternary.opacity(0.5))
-  /// Hairline stroke around composed controls (e.g. the avatar-network pair).
-  static let hairlineBorder = AnyShapeStyle(.separator)
   /// Background of inactive pills and chips.
   static let inactiveFill = AnyShapeStyle(.quaternary)
 
