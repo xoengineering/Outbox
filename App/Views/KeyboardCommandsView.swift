@@ -5,7 +5,8 @@ import SwiftUI
 ///
 /// ⌘1/2/3 focus columns; ⌘R reply; ⌘E edit; ⌘←/→ move between columns
 /// (disabled while writing, so the editor keeps caret navigation);
-/// ⌘⌥1–4 select sidebar groups; ⌃0–3 toggle pill filters; ⌃4–9 select accounts.
+/// ⌘⌥1–4 select sidebar groups; ⌃0–3 toggle status/favorite pills;
+/// ⌃4–9 toggle network pills.
 struct KeyboardCommandsView: View {
   @Environment(AppModel.self) private var model
 
@@ -15,7 +16,7 @@ struct KeyboardCommandsView: View {
       postButtons
       sidebarGroupButtons
       filterButtons
-      accountFilterButtons
+      networkFilterButtons
     }
     .hidden()
   }
@@ -103,10 +104,12 @@ struct KeyboardCommandsView: View {
   }
 
   @ViewBuilder
-  private var accountFilterButtons: some View {
-    ForEach(Array(model.accounts.prefix(6).enumerated()), id: \.element.id) { index, account in
-      Button("Select \(account.handle)") {
-        model.sidebarSelection = AppModel.SidebarSelection(accountID: account.id, isAccountRow: true)
+  private var networkFilterButtons: some View {
+    ForEach(Array(Network.allCases.prefix(6).enumerated()), id: \.element) { index, network in
+      Button("Filter \(network.displayName)") {
+        if !model.networkFilters.insert(network).inserted {
+          model.networkFilters.remove(network)
+        }
       }
       .keyboardShortcut(KeyEquivalent(Character("\(index + 4)")), modifiers: .control)
     }
