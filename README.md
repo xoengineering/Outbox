@@ -26,6 +26,10 @@ syndicated to each network (POSSE).
 - `script/lint` / `script/format` — swift format + SwiftLint
 - `script/run` — build and launch the macOS app
 
+## License
+
+MIT — see [LICENSE.md](LICENSE.md).
+
 ## File format
 
 One file per Post — the canonical copy you own. Each network it's published

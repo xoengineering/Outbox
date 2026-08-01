@@ -119,6 +119,12 @@ Decisions made unilaterally to keep moving — flag anything you want changed.
 
 ## Next
 
+### Housekeeping
+
+- [ ] Bump deployment targets 26.5 → 26.6 now that it's out: `project.yml`,
+      `OutboxKit/Package.swift`, and the minimums line in this file and the README
+- [ ] CI workflow running `script/cibuild` (lint, tests, macOS + iOS builds)
+
 ### Robustness
 
 - [ ] Bluesky session refresh (reuse `refreshJwt` instead of a new session per post)
@@ -155,7 +161,6 @@ Decisions made unilaterally to keep moving — flag anything you want changed.
 
 - [ ] App icon (the asset catalog has an empty `AppIcon` placeholder)
 - [ ] iPhone/iPad layout pass; the app builds for iOS but hasn't been run there
-- [ ] CI workflow running `script/cibuild`
 - [ ] Direct distribution first (Developer ID + notarization), App Store after
 - [ ] Sparkle or TestFlight story for updates
 - [ ] Onboarding: first run explains the file-first philosophy
