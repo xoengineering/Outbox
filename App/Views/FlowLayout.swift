@@ -23,22 +23,22 @@ struct FlowLayout: Layout {
 
   private func arrangement(of sizes: [CGSize], in maxWidth: CGFloat) -> (offsets: [CGPoint], size: CGSize) {
     var offsets: [CGPoint] = []
-    var x: CGFloat = 0
-    var y: CGFloat = 0
+    var cursorX: CGFloat = 0
+    var cursorY: CGFloat = 0
     var rowHeight: CGFloat = 0
     var widestRow: CGFloat = 0
 
     for size in sizes {
-      if x > 0, x + size.width > maxWidth {
-        x = 0
-        y += rowHeight + spacing
+      if cursorX > 0, cursorX + size.width > maxWidth {
+        cursorX = 0
+        cursorY += rowHeight + spacing
         rowHeight = 0
       }
-      offsets.append(CGPoint(x: x, y: y))
-      x += size.width + spacing
-      widestRow = max(widestRow, x - spacing)
+      offsets.append(CGPoint(x: cursorX, y: cursorY))
+      cursorX += size.width + spacing
+      widestRow = max(widestRow, cursorX - spacing)
       rowHeight = max(rowHeight, size.height)
     }
-    return (offsets, CGSize(width: widestRow, height: y + rowHeight))
+    return (offsets, CGSize(width: widestRow, height: cursorY + rowHeight))
   }
 }
