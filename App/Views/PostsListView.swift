@@ -44,11 +44,13 @@ struct PostsListView: View {
         case ".":
           if let post = model.selectedPost {
             Task { await model.toggleFavorite(post) }
-            return .handled
           }
+          return .handled
+        case .upArrow, .downArrow, .escape, .return:
           return .ignored
         default:
-          return .ignored
+          // Swallow everything else so the List's type-to-select can't jump around.
+          return .handled
         }
       }
     }

@@ -197,7 +197,11 @@ import OutboxKit
     try? await archiveFolder.withAccess { baseURL in
       try PostStore(baseDirectory: baseURL).save(file, to: post.fileURL)
     }
-    await reloadPosts()
+    // Patch the loaded post instead of rescanning the archive — this runs on
+    // a single keypress and should feel instant.
+    if let index = posts.firstIndex(where: { $0.id == post.id }) {
+      posts[index].file = file
+    }
   }
 
   /// Moves keyboard focus one column left (-1) or right (+1).
