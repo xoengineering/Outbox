@@ -9,6 +9,9 @@ struct OutboxApp: App {
       ContentView()
         .environment(model)
     }
+    .commands {
+      SidebarCommands()
+    }
 
     #if os(macOS)
       Settings {
