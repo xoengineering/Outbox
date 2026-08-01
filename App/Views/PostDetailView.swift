@@ -132,7 +132,6 @@ struct PostDetailView: View {
       HStack(spacing: 6) {
         NetworkIconView(network: copy.network, size: 12)
         Text(copy.account)
-        Spacer()
         Text(dateFormat.dayAndTimeString(from: copy.publishedAt))
           .font(.caption)
           .foregroundStyle(.secondary)
