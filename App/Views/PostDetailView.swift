@@ -1,7 +1,8 @@
 import OutboxKit
 import SwiftUI
 
-/// The "show" view for one post: content, status, permalinks, and extracted tokens.
+/// The "show" view for one Post: canonical content, its copies on networks,
+/// pending targets, and extracted tokens.
 struct PostDetailView: View {
   @Environment(AppModel.self) private var model
   var post: StoredPost
@@ -16,7 +17,9 @@ struct PostDetailView: View {
           .textSelection(.enabled)
           .frame(maxWidth: .infinity, alignment: .leading)
 
-        links
+        replyLinks
+
+        copies
 
         extractedTokens
       }
@@ -37,8 +40,8 @@ struct PostDetailView: View {
         Button("Reply", systemImage: "arrowshape.turn.up.left") {
           model.startReply(to: post)
         }
-        .disabled(post.file.metadata.remoteURL == nil)
-        .help("Write a reply to this post")
+        .disabled(!post.file.metadata.isPublished)
+        .help("Continue this thread")
       }
       ToolbarItem {
         Button("Edit", systemImage: "pencil") {
@@ -51,23 +54,12 @@ struct PostDetailView: View {
   private var header: some View {
     VStack(alignment: .leading, spacing: 6) {
       HStack {
-        Label {
-          Text(post.file.metadata.account)
-        } icon: {
-          NetworkIconView(network: post.file.metadata.network, size: 16)
-        }
-        .font(.headline)
+        Text("Written \(post.file.metadata.createdAt, format: .dateTime)")
+          .font(.caption)
+          .foregroundStyle(.secondary)
         Spacer()
         statusBadge
       }
-      HStack(spacing: 12) {
-        Text("Written \(post.file.metadata.createdAt, format: .dateTime)")
-        if let publishedAt = post.file.metadata.publishedAt {
-          Text("Published \(publishedAt, format: .dateTime)")
-        }
-      }
-      .font(.caption)
-      .foregroundStyle(.secondary)
       Divider()
     }
   }
@@ -82,32 +74,92 @@ struct PostDetailView: View {
   }
 
   @ViewBuilder
-  private var links: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      if let remoteURL = post.file.metadata.remoteURL {
-        Label {
-          Link(destination: remoteURL) {
-            Text(remoteURL.absoluteString)
-              .multilineTextAlignment(.leading)
-              .frame(maxWidth: .infinity, alignment: .leading)
-          }
-        } icon: {
-          Image(systemName: "link")
+  private var replyLinks: some View {
+    if let inReplyTo = post.file.metadata.inReplyTo {
+      Label {
+        Link(destination: inReplyTo) {
+          Text("In reply to \(inReplyTo.absoluteString)")
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+      } icon: {
+        Image(systemName: "arrowshape.turn.up.left")
       }
-      if let inReplyTo = post.file.metadata.inReplyTo {
-        Label {
-          Link(destination: inReplyTo) {
-            Text("In reply to \(inReplyTo.absoluteString)")
-              .multilineTextAlignment(.leading)
-              .frame(maxWidth: .infinity, alignment: .leading)
+      .font(.callout)
+    }
+    if let parentPath = post.file.metadata.inReplyToPost {
+      Label {
+        Text("Continues thread from \(parentPath)")
+          .foregroundStyle(.secondary)
+      } icon: {
+        Image(systemName: "text.append")
+      }
+      .font(.callout)
+    }
+  }
+
+  @ViewBuilder
+  private var copies: some View {
+    let syndication = post.file.metadata.syndication
+    let pending = post.file.metadata.targets
+    if !syndication.isEmpty || !pending.isEmpty {
+      Divider()
+      VStack(alignment: .leading, spacing: 8) {
+        Text("Copies")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.secondary)
+        ForEach(syndication, id: \.remoteID) { copy in
+          copyRow(copy)
+        }
+        ForEach(pending, id: \.self) { endpoint in
+          HStack(spacing: 6) {
+            NetworkIconView(network: endpoint.network, size: 12)
+            Text(endpoint.account)
+            Text("pending")
+              .font(.caption)
+              .foregroundStyle(.secondary)
           }
-        } icon: {
-          Image(systemName: "arrowshape.turn.up.left")
+          .font(.callout)
         }
       }
     }
-    .font(.callout)
+  }
+
+  @ViewBuilder
+  private func copyRow(_ copy: Syndication) -> some View {
+    VStack(alignment: .leading, spacing: 2) {
+      HStack(spacing: 6) {
+        NetworkIconView(network: copy.network, size: 12)
+        Text(copy.account)
+        Spacer()
+        Text(copy.publishedAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+      .font(.callout)
+      if let remoteURL = copy.remoteURL {
+        Link(destination: remoteURL) {
+          Text(remoteURL.absoluteString)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.callout)
+        .padding(.leading, 18)
+      }
+      if let text = copy.text {
+        DisclosureGroup {
+          Text(text)
+            .font(.callout)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
+          Text("Sent text differed")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.leading, 18)
+      }
+    }
   }
 
   @ViewBuilder

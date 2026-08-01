@@ -11,8 +11,8 @@ struct PostsListView: View {
     @Bindable var model = model
     List(model.visiblePosts, selection: $model.selectedPostID) { post in
       PostRowView(
-        avatarURL: model.account(for: post)?.avatarURL,
         isEmphasized: isFocused && model.selectedPostID == post.id,
+        pairs: model.endpointPairs(for: post),
         post: post
       )
       .listRowSeparator(.hidden)

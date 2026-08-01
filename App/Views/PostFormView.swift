@@ -1,12 +1,12 @@
 import OutboxKit
 import SwiftUI
 
-/// The post form, hosted in the third column: composing a new post
-/// (optionally as a reply) or editing an existing one.
+/// The post form, hosted in the third column: composing a new Post
+/// (optionally as a reply or thread continuation) or editing an existing one.
 struct PostFormView: View {
   enum Mode: Equatable {
     case edit(StoredPost)
-    case new(replyTo: URL?)
+    case new(reply: AppModel.ReplyContext?)
   }
 
   let mode: Mode
@@ -18,6 +18,7 @@ struct PostFormView: View {
   @State private var isWorking = false
   @State private var publishRun: PublishRun?
   @State private var replyURLText: String
+  @State private var selectedTargetIDs: Set<UUID>?
   @State private var text: String
 
   init(mode: Mode) {
@@ -26,9 +27,13 @@ struct PostFormView: View {
     case .edit(let post):
       _text = State(initialValue: post.file.body.trimmingCharacters(in: .whitespacesAndNewlines))
       _replyURLText = State(initialValue: post.file.metadata.inReplyTo?.absoluteString ?? "")
-    case .new(let replyTo):
+    case .new(let reply):
       _text = State(initialValue: "")
-      _replyURLText = State(initialValue: replyTo?.absoluteString ?? "")
+      if case .external(let url) = reply {
+        _replyURLText = State(initialValue: url.absoluteString)
+      } else {
+        _replyURLText = State(initialValue: "")
+      }
     }
   }
 
@@ -36,9 +41,7 @@ struct PostFormView: View {
     VStack(alignment: .leading, spacing: 12) {
       formHeader
 
-      TextField("In reply to (paste a Mastodon or Bluesky post URL)", text: $replyURLText)
-        .textFieldStyle(.roundedBorder)
-        .disabled(isEditingPublished)
+      replyField
 
       TextEditor(text: $text)
         .font(.title3)
@@ -79,31 +82,43 @@ struct PostFormView: View {
 
   @ViewBuilder
   private var formHeader: some View {
-    switch mode {
-    case .edit(let post):
-      Label {
-        Text(post.file.metadata.account)
-      } icon: {
-        NetworkIconView(network: post.file.metadata.network, size: 16)
-      }
-      .font(.headline)
-    case .new:
-      if model.accounts.isEmpty {
-        Text("Add an account in Settings to publish anywhere.")
-          .foregroundStyle(.secondary)
-      } else {
-        FlowLayout(spacing: 8) {
-          ForEach(model.accounts) { account in
-            EndpointChipView(
-              account: account,
-              isEnabled: model.enabledAccountIDs.contains(account.id),
-              remaining: remaining(for: account)
-            ) {
-              model.toggle(account)
-            }
+    if model.accounts.isEmpty {
+      Text("Add an account in Settings to publish anywhere.")
+        .foregroundStyle(.secondary)
+    } else {
+      FlowLayout(spacing: 8) {
+        ForEach(selectableAccounts) { account in
+          EndpointChipView(
+            account: account,
+            isEnabled: isTargeted(account),
+            remaining: remaining(for: account)
+          ) {
+            toggleTarget(account)
           }
         }
       }
+      if case .edit(let post) = mode, !post.file.metadata.syndication.isEmpty {
+        Text("Already published to \(post.file.metadata.syndication.map(\.account).joined(separator: ", ")).")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var replyField: some View {
+    if case .new(.thread(let parent)) = mode {
+      Label {
+        Text("Continuing thread: \(parent.file.body.trimmingCharacters(in: .whitespacesAndNewlines))")
+          .lineLimit(1)
+          .foregroundStyle(.secondary)
+      } icon: {
+        Image(systemName: "text.append")
+      }
+      .font(.callout)
+    } else if isNew || isEditableDraft {
+      TextField("In reply to (paste a Mastodon or Bluesky post URL)", text: $replyURLText)
+        .textFieldStyle(.roundedBorder)
     }
   }
 
@@ -128,9 +143,9 @@ struct PostFormView: View {
           Task { await saveEdits(to: post) }
         }
         .disabled(trimmedText.isEmpty || isWorking)
-        if post.status == .draft {
+        if post.status == .draft || post.hasPendingTargets {
           Button("Publish") {
-            Task { await publishDraft(post) }
+            Task { await publishExisting(post) }
           }
           .buttonStyle(.borderedProminent)
           .keyboardShortcut(.return, modifiers: .command)
@@ -173,8 +188,48 @@ struct PostFormView: View {
         Task { await model.deletePost(post) }
       }
     } message: {
-      Text("This removes the local file only. Anything already published stays published.")
+      Text("This removes the local file only. Copies already on networks stay published.")
     }
+  }
+
+  // MARK: - Target selection
+
+  /// New posts toggle the app-wide enabled set; edits toggle a local set
+  /// seeded from the post's pending targets.
+  private var selectableAccounts: [Account] {
+    guard case .edit(let post) = mode else { return model.accounts }
+    let syndicated = Set(post.file.metadata.syndication.map(\.endpoint))
+    return model.accounts.filter {
+      !syndicated.contains(Endpoint(account: $0.handle, network: $0.network))
+    }
+  }
+
+  private func isTargeted(_ account: Account) -> Bool {
+    switch mode {
+    case .new:
+      return model.enabledAccountIDs.contains(account.id)
+    case .edit(let post):
+      return editTargetIDs(for: post).contains(account.id)
+    }
+  }
+
+  private func toggleTarget(_ account: Account) {
+    switch mode {
+    case .new:
+      model.toggle(account)
+    case .edit(let post):
+      var selected = editTargetIDs(for: post)
+      if !selected.insert(account.id).inserted {
+        selected.remove(account.id)
+      }
+      selectedTargetIDs = selected
+    }
+  }
+
+  private func editTargetIDs(for post: StoredPost) -> Set<UUID> {
+    if let selectedTargetIDs { return selectedTargetIDs }
+    let targetIDs = post.file.metadata.targets.compactMap { model.account(for: $0)?.id }
+    return Set(targetIDs)
   }
 
   // MARK: - State helpers
@@ -184,8 +239,8 @@ struct PostFormView: View {
     return false
   }
 
-  private var isEditingPublished: Bool {
-    if case .edit(let post) = mode { return post.status == .published }
+  private var isEditableDraft: Bool {
+    if case .edit(let post) = mode { return post.status == .draft }
     return false
   }
 
@@ -193,10 +248,11 @@ struct PostFormView: View {
     text.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
-  private var replyURL: URL? {
+  private var replyContext: AppModel.ReplyContext? {
+    if case .new(.thread(let parent)) = mode { return .thread(parent) }
     let trimmed = replyURLText.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return nil }
-    return URL(string: trimmed)
+    guard !trimmed.isEmpty, let url = URL(string: trimmed) else { return nil }
+    return .external(url)
   }
 
   private var canPublishNew: Bool {
@@ -213,14 +269,14 @@ struct PostFormView: View {
   private func publishNew() async {
     isWorking = true
     defer { isWorking = false }
-    let results = await model.publish(body: trimmedText + "\n", replyTo: replyURL)
+    let results = await model.publish(body: trimmedText + "\n", reply: replyContext)
     publishRun = PublishRun(results: results)
   }
 
   private func saveDraft() async {
     isWorking = true
     defer { isWorking = false }
-    await model.saveDrafts(body: trimmedText + "\n", replyTo: replyURL)
+    await model.saveDraft(body: trimmedText + "\n", reply: replyContext)
     model.detailMode = .browse
   }
 
@@ -228,29 +284,32 @@ struct PostFormView: View {
     isWorking = true
     defer { isWorking = false }
     do {
-      try await model.updateBody(of: post, to: trimmedText + "\n")
+      try await model.update(post, body: trimmedText + "\n", targetAccountIDs: editTargetIDs(for: post))
       model.detailMode = .browse
     } catch {
       errorMessage = error.localizedDescription
     }
   }
 
-  private func publishDraft(_ post: StoredPost) async {
+  private func publishExisting(_ post: StoredPost) async {
     isWorking = true
     defer { isWorking = false }
     do {
-      try await model.updateBody(of: post, to: trimmedText + "\n")
+      try await model.update(post, body: trimmedText + "\n", targetAccountIDs: editTargetIDs(for: post))
     } catch {
       errorMessage = error.localizedDescription
       return
     }
-    guard let updated = model.posts.first(where: { $0.id == post.id }),
-      let result = await model.publishExisting(updated)
-    else {
-      errorMessage = "No matching account for this post — add it in the sidebar first."
+    guard let updated = model.posts.first(where: { $0.id == post.id }) else {
+      errorMessage = "Couldn't reload the post after saving."
       return
     }
-    publishRun = PublishRun(results: [result])
+    let results = await model.publishExisting(updated)
+    guard !results.isEmpty else {
+      errorMessage = "No pending targets with a matching account — check Settings."
+      return
+    }
+    publishRun = PublishRun(results: results)
   }
 
   private func finishAfterPublish() {

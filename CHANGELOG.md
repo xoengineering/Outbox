@@ -4,6 +4,18 @@ All notable changes to Outbox are documented here.
 
 ## Unreleased
 
+- Remodel the archive around single Posts: one canonical file per post at
+  `YYYY/MM/DD/slug-N.md`, with network copies recorded in a `syndication`
+  frontmatter list and pending destinations in `targets`. Failed targets stay
+  pending, so re-publishing retries exactly what's missing. Existing per-copy
+  archives migrate automatically on launch.
+- Replies split into `in_reply_to` (someone else's post, by URL) and
+  `in_reply_to_post` (your own post — thread continuations resolve the right
+  parent per network automatically).
+- Post rows show one row per Post with all its endpoint pairs; the post view
+  gains Copies and pending sections, including per-copy sent text when it
+  differed from the canonical body.
+
 - Initialize repository with README, TODO, scripts, and project scaffolding.
 - Add `OutboxKit` Swift package: `PostFile` (Markdown + YAML frontmatter),
   `Slug`, `PostStore` (`Network/Account/YYYY/MM/DD/slug-N.md` archive),

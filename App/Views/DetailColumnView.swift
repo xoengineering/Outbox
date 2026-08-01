@@ -16,12 +16,20 @@ struct DetailColumnView: View {
           description: Text("Select a post, or press ⌘N to write a new one.")
         )
       }
-    case .compose(let replyTo):
-      PostFormView(mode: .new(replyTo: replyTo))
-        .id("compose-\(replyTo?.absoluteString ?? "fresh")")
+    case .compose(let reply):
+      PostFormView(mode: .new(reply: reply))
+        .id(composeIdentity(for: reply))
     case .edit(let post):
       PostFormView(mode: .edit(post))
         .id(post.id)
+    }
+  }
+
+  private func composeIdentity(for reply: AppModel.ReplyContext?) -> String {
+    switch reply {
+    case .external(let url): "compose-external-\(url.absoluteString)"
+    case .thread(let parent): "compose-thread-\(parent.fileURL.path)"
+    case nil: "compose-fresh"
     }
   }
 }

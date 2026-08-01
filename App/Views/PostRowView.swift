@@ -1,11 +1,11 @@
 import OutboxKit
 import SwiftUI
 
-/// One row in the posts list: content snippet, avatar-network pair, date, and status.
+/// One row in the posts list: content snippet, endpoint pairs, date, and status.
 struct PostRowView: View {
-  var avatarURL: URL?
   /// True when this row is selected and its list owns focus.
   var isEmphasized = false
+  var pairs: [EndpointPair]
   var post: StoredPost
 
   var body: some View {
@@ -15,12 +15,14 @@ struct PostRowView: View {
         .lineLimit(2)
         .frame(maxWidth: .infinity, alignment: .leading)
       HStack(spacing: 4) {
-        AvatarNetworkPairView(
-          avatarURL: avatarURL,
-          iconTint: isEmphasized ? Palette.selectedContent : nil,
-          network: post.file.metadata.network,
-          size: 16
-        )
+        ForEach(pairs) { pair in
+          AvatarNetworkPairView(
+            avatarURL: pair.avatarURL,
+            iconTint: isEmphasized ? Palette.selectedContent : nil,
+            network: pair.network,
+            size: 16
+          )
+        }
         if post.file.metadata.isFavorite {
           Image(systemName: "star.fill")
             .resizable()

@@ -104,6 +104,19 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
 - [ ] Error surfaces: rate limits, dead instances, expired tokens (re-auth prompt)
 - [ ] iCloud Drive-safe file writing (coordinate if base folder is in iCloud)
 
+## Milestone 3.5 — Single-Post model (done 2026-07-31)
+
+- [x] One canonical file per Post: `YYYY/MM/DD/slug-N.md`; network copies live in
+      frontmatter (`syndication` list; `targets` = destinations still owed a copy)
+- [x] Per-copy `text` override records what was actually sent when it differed
+- [x] Failed/pending targets stay in `targets` — re-publish retries exactly those
+- [x] `in_reply_to` (external URL) vs `in_reply_to_post` (own-post path);
+      thread continuations resolve per-network parents from the parent's copies
+- [x] Automatic migration from the per-copy layout on launch (composition ID
+      grouping, same-content-same-minute fallback, favorite survives merge)
+- [ ] Import tool: pull already-published posts from sites into the archive
+- [ ] De-dupe tool: find same-content posts across sites and merge into one Post
+
 ## Milestone 4 — More content types
 
 - [ ] Media attachments with alt text (next up). Design:

@@ -7,6 +7,8 @@ identifier_name:
   min_length: 2
 nesting:
   type_level: 2
+type_body_length:
+  warning: 350
 disabled_rules:
   - opening_brace # swift-format owns formatting; it wraps braces after multiline conditions
   - todo

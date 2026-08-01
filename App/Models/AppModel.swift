@@ -2,6 +2,13 @@ import Foundation
 import Observation
 import OutboxKit
 
+/// One avatar + network pairing a post touches, for row footers.
+struct EndpointPair: Identifiable {
+  let id: String
+  var avatarURL: URL?
+  var network: Network
+}
+
 /// App-wide state: configured accounts, the loaded archive, selection, and the
 /// wiring between the archive folder, Keychain, and Publisher.
 @MainActor @Observable final class AppModel {
@@ -17,9 +24,15 @@ import OutboxKit
     var status: StoredPost.Status?
   }
 
+  /// What a new post replies to: someone else's post by URL, or one of our own.
+  enum ReplyContext: Equatable {
+    case external(URL)
+    case thread(StoredPost)
+  }
+
   enum DetailMode: Equatable {
     case browse
-    case compose(replyTo: URL?)
+    case compose(reply: ReplyContext?)
     case edit(StoredPost)
   }
 
@@ -32,16 +45,16 @@ import OutboxKit
 
   var accounts: [Account] = []
   var detailMode: DetailMode = .browse
-  var focusRequest: FocusTarget?
   var enabledAccountIDs: Set<UUID> = []
+  var focusRequest: FocusTarget?
   var posts: [StoredPost] = []
   var searchText = ""
   var selectedPostID: URL?
+  var sidebarSelection: SidebarSelection? = SidebarSelection()
   /// Pill toggle filters on the posts list; empty/false means no filtering.
   var favoritesFilter = false
   var networkFilters: Set<Network> = []
   var statusFilters: Set<StoredPost.Status> = []
-  var sidebarSelection: SidebarSelection? = SidebarSelection()
   let archiveFolder = ArchiveFolder()
 
   private let accountsRepository: AccountsRepository
@@ -102,17 +115,28 @@ import OutboxKit
     }
   }
 
-  func account(for post: StoredPost) -> Account? {
-    accounts.first {
-      $0.handle == post.file.metadata.account && $0.network == post.file.metadata.network
+  func account(for endpoint: Endpoint) -> Account? {
+    accounts.first { $0.handle == endpoint.account && $0.network == endpoint.network }
+  }
+
+  /// The avatar + network pairs shown on a post row, copies first.
+  func endpointPairs(for post: StoredPost) -> [EndpointPair] {
+    post.file.metadata.endpoints.map { endpoint in
+      EndpointPair(
+        id: "\(endpoint.network.rawValue)|\(endpoint.account)",
+        avatarURL: account(for: endpoint)?.avatarURL,
+        network: endpoint.network
+      )
     }
   }
 
   // MARK: - Archive
 
   func reloadPosts() async {
-    let loaded = try? await archiveFolder.withAccess { baseURL in
-      try PostStore(baseDirectory: baseURL).allPosts()
+    let loaded = try? await archiveFolder.withAccess { baseURL -> [StoredPost] in
+      let store = PostStore(baseDirectory: baseURL)
+      try? ArchiveMigrator(baseDirectory: baseURL, store: store).migrateIfNeeded()
+      return try store.allPosts()
     }
     posts = loaded ?? []
   }
@@ -122,9 +146,8 @@ import OutboxKit
     if let accountID = sidebarSelection?.accountID,
       let account = accounts.first(where: { $0.id == accountID })
     {
-      filtered = filtered.filter {
-        $0.file.metadata.account == account.handle && $0.file.metadata.network == account.network
-      }
+      let endpoint = Endpoint(account: account.handle, network: account.network)
+      filtered = filtered.filter { $0.file.metadata.endpoints.contains(endpoint) }
     }
     if let status = sidebarSelection?.status {
       filtered = filtered.filter { $0.status == status }
@@ -136,7 +159,9 @@ import OutboxKit
       filtered = filtered.filter { statusFilters.contains($0.status) }
     }
     if !networkFilters.isEmpty {
-      filtered = filtered.filter { networkFilters.contains($0.file.metadata.network) }
+      filtered = filtered.filter { post in
+        post.file.metadata.endpoints.contains { networkFilters.contains($0.network) }
+      }
     }
     if favoritesFilter {
       filtered = filtered.filter(\.file.metadata.isFavorite)
@@ -182,50 +207,109 @@ import OutboxKit
   // MARK: - Composing
 
   func startNewPost() {
-    detailMode = .compose(replyTo: nil)
+    detailMode = .compose(reply: nil)
   }
 
-  /// Starts a reply to a published post: targets that post's account and
-  /// prefills the reply URL with its permalink.
+  /// Starts a thread continuation of one of our own published posts: targets
+  /// the accounts it was syndicated to, threading per network at publish time.
   func startReply(to post: StoredPost) {
-    if let account = account(for: post) {
-      enabledAccountIDs = [account.id]
+    let syndicatedAccountIDs = post.file.metadata.syndication.compactMap { copy in
+      account(for: copy.endpoint)?.id
     }
-    detailMode = .compose(replyTo: post.file.metadata.remoteURL)
+    if !syndicatedAccountIDs.isEmpty {
+      enabledAccountIDs = Set(syndicatedAccountIDs)
+    }
+    detailMode = .compose(reply: .thread(post))
   }
 
   // MARK: - Publishing
 
-  func publish(body: String, replyTo replyURL: URL?) async -> [Publisher.TargetResult] {
-    let targets = enabledTargets
-    let results = await archiveFolder.withAccess { baseURL in
-      await makePublisher(baseURL: baseURL).publish(body: body, replyTo: replyURL, to: targets)
+  func publish(body: String, reply: ReplyContext?) async -> [Publisher.TargetResult] {
+    let targets = targets(for: enabledAccounts, reply: reply)
+    let externalReply: URL? =
+      if case .external(let url) = reply { url } else { nil }
+
+    let results = await archiveFolder.withAccess { baseURL -> [Publisher.TargetResult] in
+      let store = PostStore(baseDirectory: baseURL)
+      var threadPath: String?
+      if case .thread(let parent) = reply {
+        threadPath = store.relativePath(of: parent.fileURL)
+      }
+      let output = await self.makePublisher(store: store).publish(
+        body: body,
+        inReplyTo: externalReply,
+        inReplyToPost: threadPath,
+        to: targets
+      )
+      return output.results
     }
     await reloadPosts()
     return results
   }
 
-  func saveDrafts(body: String, replyTo replyURL: URL?) async {
-    let targets = enabledTargets
-    _ = await archiveFolder.withAccess { baseURL in
-      makePublisher(baseURL: baseURL).saveDrafts(body: body, replyTo: replyURL, for: targets)
+  func saveDraft(body: String, reply: ReplyContext?) async {
+    let targets = targets(for: enabledAccounts, reply: reply)
+    let externalReply: URL? =
+      if case .external(let url) = reply { url } else { nil }
+
+    _ = await archiveFolder.withAccess { baseURL -> [Publisher.TargetResult] in
+      let store = PostStore(baseDirectory: baseURL)
+      var threadPath: String?
+      if case .thread(let parent) = reply {
+        threadPath = store.relativePath(of: parent.fileURL)
+      }
+      return self.makePublisher(store: store).saveDraft(
+        body: body,
+        inReplyTo: externalReply,
+        inReplyToPost: threadPath,
+        for: targets
+      ).results
     }
     await reloadPosts()
   }
 
-  func publishExisting(_ post: StoredPost) async -> Publisher.TargetResult? {
-    guard let account = account(for: post) else { return nil }
-    let target = Publisher.Target(account: account, credential: keychain.credential(for: account.id) ?? .none)
-    let result = await archiveFolder.withAccess { baseURL in
-      await makePublisher(baseURL: baseURL).publishExisting(post, target: target)
+  /// Publishes a post's pending targets, threading replies per network.
+  func publishExisting(_ post: StoredPost) async -> [Publisher.TargetResult] {
+    let results = await archiveFolder.withAccess { baseURL -> [Publisher.TargetResult] in
+      let store = PostStore(baseDirectory: baseURL)
+      let parentPost = post.file.metadata.inReplyToPost.flatMap { path in
+        self.posts.first { store.relativePath(of: $0.fileURL) == path }
+      }
+      let targets = post.file.metadata.targets.compactMap { endpoint -> Publisher.Target? in
+        guard let account = self.account(for: endpoint) else { return nil }
+        var parentURL: URL?
+        if let external = post.file.metadata.inReplyTo,
+          self.inferredNetwork(of: external) == account.network
+        {
+          parentURL = external
+        }
+        if let parentPost,
+          let copy = parentPost.file.metadata.syndication.first(where: { $0.network == account.network })
+        {
+          parentURL = copy.remoteURL
+        }
+        return Publisher.Target(
+          account: account,
+          credential: self.credential(for: account),
+          replyParentURL: parentURL
+        )
+      }
+      return await self.makePublisher(store: store).publishExisting(post, to: targets).results
     }
     await reloadPosts()
-    return result
+    return results
   }
 
-  func updateBody(of post: StoredPost, to newBody: String) async throws {
+  /// Updates a post's canonical body and (for unsyndicated endpoints) its targets.
+  func update(_ post: StoredPost, body: String, targetAccountIDs: Set<UUID>) async throws {
     var file = post.file
-    file.body = newBody
+    file.body = body
+    let syndicated = Set(file.metadata.syndication.map(\.endpoint))
+    file.metadata.targets =
+      accounts
+      .filter { targetAccountIDs.contains($0.id) }
+      .map { Endpoint(account: $0.handle, network: $0.network) }
+      .filter { !syndicated.contains($0) }
     try await archiveFolder.withAccess { baseURL in
       try PostStore(baseDirectory: baseURL).save(file, to: post.fileURL)
     }
@@ -241,20 +325,50 @@ import OutboxKit
     await reloadPosts()
   }
 
-  private var enabledTargets: [Publisher.Target] {
-    enabledAccounts.map { account in
-      Publisher.Target(account: account, credential: keychain.credential(for: account.id) ?? .none)
+  // MARK: - Target building
+
+  private func targets(for accounts: [Account], reply: ReplyContext?) -> [Publisher.Target] {
+    switch reply {
+    case nil:
+      return accounts.map { Publisher.Target(account: $0, credential: credential(for: $0)) }
+    case .external(let url):
+      // A reply to someone's post only makes sense on that post's own network.
+      let network = inferredNetwork(of: url)
+      return accounts.filter { $0.network == network }.map {
+        Publisher.Target(account: $0, credential: credential(for: $0), replyParentURL: url)
+      }
+    case .thread(let parent):
+      return accounts.compactMap { account in
+        let copies = parent.file.metadata.syndication
+        guard
+          let copy = copies.first(where: { $0.network == account.network && $0.account == account.handle })
+            ?? copies.first(where: { $0.network == account.network })
+        else { return nil }
+        return Publisher.Target(
+          account: account,
+          credential: credential(for: account),
+          replyParentURL: copy.remoteURL
+        )
+      }
     }
   }
 
-  private func makePublisher(baseURL: URL) -> Publisher {
+  private func inferredNetwork(of url: URL) -> Network {
+    url.host()?.contains("bsky.app") == true ? .bluesky : .mastodon
+  }
+
+  private func credential(for account: Account) -> Credential {
+    keychain.credential(for: account.id) ?? .none
+  }
+
+  private func makePublisher(store: PostStore) -> Publisher {
     Publisher(
       adapters: [
         .bluesky: BlueskyAdapter(),
         .mastodon: MastodonAdapter(),
         .threads: ThreadsAdapter(),
       ],
-      store: PostStore(baseDirectory: baseURL)
+      store: store
     )
   }
 }

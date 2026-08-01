@@ -16,11 +16,15 @@ import Testing
   @Test func mergesLegacyCopiesIntoSinglePosts() throws {
     // Lay out the legacy tree: one published crosspost (2 copies, no composition
     // ID, same minute), one 2-copy draft composition, one solo draft.
-    try copyLegacyFixture("legacy-mastodon-published.md", to: "Mastodon/@veganstraightedge@ruby.social/2026/07/31/two-by-two-hands-of-blue-5.md")
-    try copyLegacyFixture("legacy-bluesky-published.md", to: "Bluesky/@veganstraightedge.com/2026/07/31/two-by-two-hands-of-blue-1.md")
+    try copyLegacyFixture(
+      "legacy-mastodon-published.md", to: "Mastodon/@veganstraightedge@ruby.social/2026/07/31/two-by-two-hands-of-blue-5.md")
+    try copyLegacyFixture(
+      "legacy-bluesky-published.md", to: "Bluesky/@veganstraightedge.com/2026/07/31/two-by-two-hands-of-blue-1.md")
     try copyLegacyFixture("legacy-draft-bluesky.md", to: "Bluesky/@veganstraightedge.com/2026/07/31/draft-3.md")
     try copyLegacyFixture("legacy-draft-mastodon.md", to: "Mastodon/@veganstraightedge@ruby.social/2026/07/31/draft-7.md")
-    try copyLegacyFixture("legacy-solo-draft.md", to: "Mastodon/@veganstraightedge@ruby.social/2026/07/31/mr-hammond-the-phones-are-working-1.md")
+    try copyLegacyFixture(
+      "legacy-solo-draft.md", to: "Mastodon/@veganstraightedge@ruby.social/2026/07/31/mr-hammond-the-phones-are-working-1.md"
+    )
 
     let migrator = ArchiveMigrator(baseDirectory: baseDirectory, store: store)
     let written = try migrator.migrateIfNeeded()
@@ -42,9 +46,10 @@ import Testing
     #expect(draft.file.metadata.targets.count == 2)
 
     let solo = try #require(posts.first { $0.file.body.contains("Mr Hammond") })
-    #expect(solo.file.metadata.targets == [
-      Endpoint(account: "@veganstraightedge@ruby.social", network: .mastodon)
-    ])
+    #expect(
+      solo.file.metadata.targets == [
+        Endpoint(account: "@veganstraightedge@ruby.social", network: .mastodon)
+      ])
 
     // Legacy tree is gone, including the emptied network directories.
     #expect(!FileManager.default.fileExists(atPath: baseDirectory.appendingPathComponent("Mastodon").path))
