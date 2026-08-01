@@ -18,7 +18,11 @@ struct AvatarNetworkPairView: View {
       NetworkIconView(network: network, size: size)
         .padding(.horizontal, size * 0.2)
     }
+    .padding(1)
     .background(Palette.inactiveFill, in: Capsule())
+    .overlay {
+      Capsule().strokeBorder(Palette.hairlineBorder, lineWidth: 1)
+    }
     .accessibilityElement(children: .combine)
     .accessibilityLabel(network.displayName)
   }
