@@ -3,7 +3,11 @@ import OutboxKit
 
 /// Publishing, drafting, and target construction for `AppModel`.
 extension AppModel {
-  func publish(body: String, reply: ReplyContext?) async -> [Publisher.TargetResult] {
+  func publish(
+    attachments: [PendingAttachment] = [],
+    body: String,
+    reply: ReplyContext?
+  ) async -> [Publisher.TargetResult] {
     let targets = targets(for: enabledAccounts, reply: reply)
     let externalReply: URL? =
       if case .external(let url) = reply { url } else { nil }
@@ -16,6 +20,7 @@ extension AppModel {
         threadPath = store.relativePath(of: parent.fileURL)
       }
       let output = await self.makePublisher(store: store).publish(
+        attachments: attachments,
         body: body,
         inReplyTo: externalReply,
         inReplyToPost: threadPath,
@@ -28,7 +33,7 @@ extension AppModel {
     return results
   }
 
-  func saveDraft(body: String, reply: ReplyContext?) async {
+  func saveDraft(attachments: [PendingAttachment] = [], body: String, reply: ReplyContext?) async {
     let targets = targets(for: enabledAccounts, reply: reply)
     let externalReply: URL? =
       if case .external(let url) = reply { url } else { nil }
@@ -41,6 +46,7 @@ extension AppModel {
         threadPath = store.relativePath(of: parent.fileURL)
       }
       return self.makePublisher(store: store).saveDraft(
+        attachments: attachments,
         body: body,
         inReplyTo: externalReply,
         inReplyToPost: threadPath,
@@ -129,6 +135,42 @@ extension AppModel {
     }
     if selectedPostID == post.id { selectedPostID = nil }
     detailMode = .browse
+    await reloadPosts()
+  }
+
+  // MARK: - Attachments
+
+  /// The on-disk URL of a stored attachment, for previews.
+  func attachmentURL(_ attachment: Attachment, for post: StoredPost) -> URL {
+    PostStore(baseDirectory: archiveFolder.url)
+      .attachmentURL(named: attachment.fileName, for: post.fileURL)
+  }
+
+  /// Adds newly picked media to an existing post, writing the files beside it.
+  func addAttachments(_ pending: [PendingAttachment], to post: StoredPost) async throws {
+    var file = post.file
+    try await archiveFolder.withAccess { baseURL in
+      let store = PostStore(baseDirectory: baseURL)
+      for attachment in pending {
+        let fileName = try store.addAttachment(attachment, to: post.fileURL)
+        file.metadata.media.append(Attachment(alt: attachment.alt, fileName: fileName))
+      }
+      try store.save(file, to: post.fileURL)
+    }
+    await reloadPosts()
+  }
+
+  /// Replaces a post's media list — used when alt text is edited or media removed.
+  func updateAttachments(_ media: [Attachment], removing removed: [String], on post: StoredPost) async throws {
+    var file = post.file
+    file.metadata.media = media
+    try await archiveFolder.withAccess { baseURL in
+      let store = PostStore(baseDirectory: baseURL)
+      for fileName in removed {
+        try? store.deleteAttachment(named: fileName, for: post.fileURL)
+      }
+      try store.save(file, to: post.fileURL)
+    }
     await reloadPosts()
   }
 

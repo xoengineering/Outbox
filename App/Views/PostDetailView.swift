@@ -22,6 +22,12 @@ struct PostDetailView: View {
           .frame(maxWidth: .infinity, alignment: .leading)
           .padding(.top, 32)
 
+        if !post.file.metadata.media.isEmpty {
+          AttachmentGalleryView(attachments: post.file.metadata.media) { attachment in
+            model.attachmentURL(attachment, for: post)
+          }
+        }
+
         replyLinks
 
         VStack(alignment: .leading, spacing: 8) {

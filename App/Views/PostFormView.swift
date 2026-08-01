@@ -11,16 +11,18 @@ struct PostFormView: View {
 
   let mode: Mode
 
-  @Environment(AppModel.self) private var model
+  @Environment(AppModel.self) var model
+  @State var attachments: [ComposerAttachment] = []
+  @State var removedFileNames: [String] = []
+  @State var errorMessage: String?
+  @State var isWorking = false
+  @State var publishRun: PublishRun?
+  @State var selectedTargetIDs: Set<UUID>?
+  @State var text: String
   @State private var isConfirmingDiscard = false
   @FocusState private var isContentFocused: Bool
   @FocusState private var isReplyFieldFocused: Bool
-  @State private var errorMessage: String?
-  @State private var isWorking = false
-  @State private var publishRun: PublishRun?
   @State private var replyURLText: String
-  @State private var selectedTargetIDs: Set<UUID>?
-  @State private var text: String
   @State private var upstreamSnapshot: ReplySnapshot?
 
   init(mode: Mode) {
@@ -46,6 +48,9 @@ struct PostFormView: View {
 
       fields
 
+      PostFormMediaField(attachments: $attachments, removedFileNames: $removedFileNames)
+        .padding(.horizontal)
+
       if let errorMessage {
         Text(errorMessage)
           .foregroundStyle(Palette.danger)
@@ -65,6 +70,7 @@ struct PostFormView: View {
     .navigationTitle(isNew ? "New Post" : "Edit Post")
     .task {
       isContentFocused = true
+      if case .edit(let post) = mode { attachments = loadStoredAttachments(from: post) }
       await refreshUpstreamPreview()
     }
     .tabHopsBetweenFields(
@@ -264,7 +270,7 @@ struct PostFormView: View {
     }
   }
 
-  private func editTargetIDs(for post: StoredPost) -> Set<UUID> {
+  func editTargetIDs(for post: StoredPost) -> Set<UUID> {
     if let selectedTargetIDs { return selectedTargetIDs }
     let targetIDs = post.file.metadata.targets.compactMap { model.account(for: $0)?.id }
     return Set(targetIDs)
@@ -298,11 +304,11 @@ struct PostFormView: View {
     return false
   }
 
-  private var trimmedText: String {
+  var trimmedText: String {
     text.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
-  private var replyContext: AppModel.ReplyContext? {
+  var replyContext: AppModel.ReplyContext? {
     if case .new(.thread(let parent)) = mode { return .thread(parent) }
     let trimmed = replyURLText.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty, let url = URL(string: trimmed) else { return nil }
@@ -318,77 +324,4 @@ struct PostFormView: View {
     account.characterLimit - CharacterCount.count(text, for: account.network)
   }
 
-  // MARK: - Actions
-
-  private func publishNew() async {
-    isWorking = true
-    defer { isWorking = false }
-    let results = await model.publish(body: trimmedText + "\n", reply: replyContext)
-    publishRun = PublishRun(results: results)
-  }
-
-  private func saveDraft() async {
-    isWorking = true
-    defer { isWorking = false }
-    await model.saveDraft(body: trimmedText + "\n", reply: replyContext)
-    model.detailMode = .browse
-  }
-
-  private func saveEdits(to post: StoredPost) async {
-    isWorking = true
-    defer { isWorking = false }
-    do {
-      try await model.update(post, body: trimmedText + "\n", targetAccountIDs: editTargetIDs(for: post))
-      model.detailMode = .browse
-    } catch {
-      errorMessage = error.localizedDescription
-    }
-  }
-
-  private func updateCopies(of post: StoredPost) async {
-    isWorking = true
-    defer { isWorking = false }
-    do {
-      try await model.update(post, body: trimmedText + "\n", targetAccountIDs: editTargetIDs(for: post))
-    } catch {
-      errorMessage = error.localizedDescription
-      return
-    }
-    guard let updated = model.posts.first(where: { $0.id == post.id }) else {
-      errorMessage = "Couldn't reload the post after saving."
-      return
-    }
-    let results = await model.editPublished(updated, body: trimmedText + "\n")
-    publishRun = PublishRun(results: results)
-  }
-
-  private func publishExisting(_ post: StoredPost) async {
-    isWorking = true
-    defer { isWorking = false }
-    do {
-      try await model.update(post, body: trimmedText + "\n", targetAccountIDs: editTargetIDs(for: post))
-    } catch {
-      errorMessage = error.localizedDescription
-      return
-    }
-    guard let updated = model.posts.first(where: { $0.id == post.id }) else {
-      errorMessage = "Couldn't reload the post after saving."
-      return
-    }
-    let results = await model.publishExisting(updated)
-    guard !results.isEmpty else {
-      errorMessage = "No pending targets with a matching account — check Settings."
-      return
-    }
-    publishRun = PublishRun(results: results)
-  }
-
-  private func finishAfterPublish() {
-    model.detailMode = .browse
-  }
-}
-
-struct PublishRun: Identifiable {
-  let id = UUID()
-  var results: [Publisher.TargetResult]
 }
