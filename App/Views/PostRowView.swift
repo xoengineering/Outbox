@@ -26,7 +26,7 @@ struct PostRowView: View {
       HStack(spacing: 4) {
         AvatarNetworkPairView(
           avatarURL: avatarURL,
-          background: isEmphasized ? Palette.selectedContent : Palette.inactiveFill,
+          iconTint: isEmphasized ? Palette.selectedContent : nil,
           network: post.file.metadata.network,
           size: 16
         )
