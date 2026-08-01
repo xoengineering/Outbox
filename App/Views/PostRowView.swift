@@ -38,6 +38,7 @@ struct PostRowView: View {
             .scaledToFit()
             .frame(height: 16)
             .foregroundStyle(isEmphasized ? Palette.selectedContent : AnyShapeStyle(Palette.favorite))
+            .grayscale(monochromeRowIcons ? 1 : 0)
         }
         Spacer()
         if post.status == .published {
