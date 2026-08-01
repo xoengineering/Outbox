@@ -1,6 +1,10 @@
 import OutboxKit
 import SwiftUI
 
+#if os(macOS)
+  import AppKit
+#endif
+
 /// The post form, hosted in the third column: composing a new Post
 /// (optionally as a reply or thread continuation) or editing an existing one.
 struct PostFormView: View {
@@ -22,6 +26,9 @@ struct PostFormView: View {
   @State private var selectedTargetIDs: Set<UUID>?
   @State private var text: String
   @State private var upstreamSnapshot: ReplySnapshot?
+  #if os(macOS)
+    @State private var tabKeyMonitor: Any?
+  #endif
 
   init(mode: Mode) {
     self.mode = mode
@@ -67,6 +74,33 @@ struct PostFormView: View {
       isContentFocused = true
       await refreshUpstreamPreview()
     }
+    #if os(macOS)
+      // Text views eat Tab before SwiftUI key handling; hop between the reply
+      // field and the editor at the event-monitor level instead.
+      .onAppear {
+        let contentFocus = $isContentFocused
+        let replyFocus = $isReplyFieldFocused
+        let fieldExists = hasReplyField
+        tabKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+          guard event.keyCode == 48, fieldExists else { return event }
+          if event.modifierFlags.contains(.shift), contentFocus.wrappedValue {
+            replyFocus.wrappedValue = true
+            return nil
+          }
+          if !event.modifierFlags.contains(.shift), replyFocus.wrappedValue {
+            contentFocus.wrappedValue = true
+            return nil
+          }
+          return event
+        }
+      }
+      .onDisappear {
+        if let tabKeyMonitor {
+          NSEvent.removeMonitor(tabKeyMonitor)
+        }
+        tabKeyMonitor = nil
+      }
+    #endif
     .task(id: replyURLText) {
       try? await Task.sleep(for: .milliseconds(600))
       guard !Task.isCancelled else { return }
@@ -132,11 +166,6 @@ struct PostFormView: View {
           .textFieldStyle(.plain)
           .font(.title3)
           .focused($isReplyFieldFocused)
-          .onKeyPress { press in
-            guard press.key == .tab, !press.modifiers.contains(.shift) else { return .ignored }
-            isContentFocused = true
-            return .handled
-          }
           .padding(.horizontal, 16)
           .padding(.vertical, 12)
       }
@@ -144,13 +173,6 @@ struct PostFormView: View {
       TextEditor(text: $text)
         .font(.title3)
         .focused($isContentFocused)
-        .onKeyPress { press in
-          guard press.key == .tab, press.modifiers.contains(.shift), hasReplyField else {
-            return .ignored
-          }
-          isReplyFieldFocused = true
-          return .handled
-        }
         .scrollContentBackground(.hidden)
         .padding(.horizontal, 11)
         .padding(.vertical, 8)
