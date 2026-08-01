@@ -66,35 +66,41 @@ public struct PostFile: Equatable, Sendable {
         lines.append(textLine.isEmpty ? "" : "    \(textLine)")
       }
     }
-    if !metadata.targets.isEmpty {
-      lines.append("targets:")
-      for target in metadata.targets {
-        lines.append("  - network: \(target.network.rawValue)")
-        lines.append("    account: \(quoted(target.account))")
-      }
-    }
-    if !metadata.syndication.isEmpty {
-      lines.append("syndication:")
-      for copy in metadata.syndication {
-        lines.append("  - network: \(copy.network.rawValue)")
-        lines.append("    account: \(quoted(copy.account))")
-        lines.append("    published_at: \(iso8601(copy.publishedAt))")
-        lines.append("    id: \(quoted(copy.remoteID))")
-        if let remoteURL = copy.remoteURL {
-          lines.append("    url: \(remoteURL.absoluteString)")
-        }
-        if let text = copy.text {
-          lines.append("    text: |")
-          for textLine in text.components(separatedBy: "\n") {
-            lines.append(textLine.isEmpty ? "" : "      \(textLine)")
-          }
-        }
-      }
-    }
+    appendTargets(to: &lines)
+    appendSyndication(to: &lines)
     lines.append(Self.delimiter)
     lines.append("")
     lines.append(body)
     return lines.joined(separator: "\n")
+  }
+
+  private func appendTargets(to lines: inout [String]) {
+    guard !metadata.targets.isEmpty else { return }
+    lines.append("targets:")
+    for target in metadata.targets {
+      lines.append("  - network: \(target.network.rawValue)")
+      lines.append("    account: \(quoted(target.account))")
+    }
+  }
+
+  private func appendSyndication(to lines: inout [String]) {
+    guard !metadata.syndication.isEmpty else { return }
+    lines.append("syndication:")
+    for copy in metadata.syndication {
+      lines.append("  - network: \(copy.network.rawValue)")
+      lines.append("    account: \(quoted(copy.account))")
+      lines.append("    published_at: \(iso8601(copy.publishedAt))")
+      lines.append("    id: \(quoted(copy.remoteID))")
+      if let remoteURL = copy.remoteURL {
+        lines.append("    url: \(remoteURL.absoluteString)")
+      }
+      if let text = copy.text {
+        lines.append("    text: |")
+        for textLine in text.components(separatedBy: "\n") {
+          lines.append(textLine.isEmpty ? "" : "      \(textLine)")
+        }
+      }
+    }
   }
 
   // MARK: - Parsing helpers
