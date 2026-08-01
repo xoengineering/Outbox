@@ -10,6 +10,7 @@ struct PostsListView: View {
   @AppStorage("LastFocusedColumn") private var lastFocusedColumn = "accounts"
   @Environment(AppModel.self) private var model
   @FocusState private var isFocused: Bool
+  @State private var postPendingTrash: StoredPost?
 
   var body: some View {
     @Bindable var model = model
@@ -43,6 +44,17 @@ struct PostsListView: View {
             }
             .keyboardShortcut("r", modifiers: [.command, .option])
           #endif
+          if isTrashable(post) {
+            Divider()
+            Button("Move to Trash…", role: .destructive) {
+              postPendingTrash = post
+            }
+            .keyboardShortcut(.delete, modifiers: [])
+            Button("Move to Trash Without Asking", role: .destructive) {
+              Task { await model.trashPost(post) }
+            }
+            .keyboardShortcut(.delete, modifiers: .option)
+          }
         }
       }
       .focused($isFocused)
@@ -50,6 +62,13 @@ struct PostsListView: View {
       // strangely moves selection. Swallow it; text views keep their native ⌃D.
       .onKeyPress { press in
         if press.key == "d" && press.modifiers.contains(.control) { return .handled }
+        // ⌥⌫ trashes without stopping to ask.
+        if press.key == .delete, press.modifiers.contains(.option) {
+          if let post = model.selectedPost, isTrashable(post) {
+            Task { await model.trashPost(post) }
+          }
+          return .handled
+        }
         if press.key == .tab {
           if press.modifiers.contains(.shift) {
             model.focusRequest = .accounts
@@ -77,6 +96,11 @@ struct PostsListView: View {
           // Return opens the editor, alongside ⌘E.
           if let post = model.selectedPost {
             model.detailMode = .edit(post)
+          }
+          return .handled
+        case .delete:
+          if let post = model.selectedPost, isTrashable(post) {
+            postPendingTrash = post
           }
           return .handled
         case .upArrow, .downArrow, .escape:
@@ -127,6 +151,24 @@ struct PostsListView: View {
     .onChange(of: model.selectedPostID) {
       model.detailMode = .browse
     }
+    .confirmationDialog(
+      "Move this draft to the Trash?",
+      isPresented: Binding(
+        get: { postPendingTrash != nil },
+        set: { if !$0 { postPendingTrash = nil } }
+      ),
+      titleVisibility: .visible
+    ) {
+      Button("Move to Trash", role: .destructive) {
+        if let post = postPendingTrash {
+          Task { await model.trashPost(post) }
+        }
+        postPendingTrash = nil
+      }
+      Button("Cancel", role: .cancel) { postPendingTrash = nil }
+    } message: {
+      Text("Its file and any media move to the Trash, so you can put them back.")
+    }
     .overlay {
       if model.visiblePosts.isEmpty {
         ContentUnavailableView(
@@ -136,6 +178,11 @@ struct PostsListView: View {
         )
       }
     }
+  }
+
+  /// Only drafts with no copies on any network can be trashed.
+  private func isTrashable(_ post: StoredPost) -> Bool {
+    post.file.metadata.syndication.isEmpty
   }
 
   /// A star pill filtering to favorited posts.

@@ -138,6 +138,20 @@ extension AppModel {
     await reloadPosts()
   }
 
+  /// Moves an unpublished draft and its media to the Trash.
+  ///
+  /// Only drafts with no copies anywhere can be trashed — a published Post is
+  /// the local record of something that exists on a network.
+  func trashPost(_ post: StoredPost) async {
+    guard post.file.metadata.syndication.isEmpty else { return }
+    try? await archiveFolder.withAccess { baseURL in
+      try PostStore(baseDirectory: baseURL).trash(post)
+    }
+    if selectedPostID == post.id { selectedPostID = nil }
+    detailMode = .browse
+    await reloadPosts()
+  }
+
   // MARK: - Attachments
 
   /// The on-disk URL of a stored attachment, for previews.

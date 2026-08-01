@@ -62,6 +62,22 @@ public struct PostStore: Sendable {
     return posts.sorted { $0.file.metadata.createdAt > $1.file.metadata.createdAt }
   }
 
+  /// Moves a post and its media to the Trash, so a mistake is recoverable.
+  ///
+  /// iOS has no Trash, so files are removed there.
+  public func trash(_ post: StoredPost) throws {
+    #if os(macOS)
+      for attachment in post.file.metadata.media {
+        let mediaURL = attachmentURL(named: attachment.fileName, for: post.fileURL)
+        guard FileManager.default.fileExists(atPath: mediaURL.path) else { continue }
+        try FileManager.default.trashItem(at: mediaURL, resultingItemURL: nil)
+      }
+      try FileManager.default.trashItem(at: post.fileURL, resultingItemURL: nil)
+    #else
+      try delete(post)
+    #endif
+  }
+
   /// Deletes a post file and any media stored with it.
   public func delete(_ post: StoredPost) throws {
     for attachment in post.file.metadata.media {
