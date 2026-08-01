@@ -62,6 +62,24 @@ import Testing
     }
   }
 
+  @Test func editsStatusWithPUT() async throws {
+    let transport = FixtureTransport(fixtureName: "mastodon-status-created.json")
+    let adapter = MastodonAdapter(transport: transport)
+
+    try await adapter.edit(
+      body: "Corrected!",
+      remoteID: "115234567890123456",
+      account: account,
+      credential: .accessToken("token-123")
+    )
+
+    let request = transport.requests[0]
+    #expect(request.httpMethod == "PUT")
+    #expect(request.url!.path == "/api/v1/statuses/115234567890123456")
+    let body = try transport.requestBodyJSON(at: 0)
+    #expect(body["status"] as? String == "Corrected!")
+  }
+
   @Test func throwsOnHTTPError() async throws {
     let transport = FixtureTransport(fixtureName: "mastodon-error-unauthorized.json", statusCode: 401)
     let adapter = MastodonAdapter(transport: transport)

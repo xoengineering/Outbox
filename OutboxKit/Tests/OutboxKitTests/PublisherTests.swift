@@ -116,6 +116,37 @@ import Testing
     #expect(adapter.receivedPosts.first?.replyTo == .mastodon(statusID: "115000000000000001"))
   }
 
+  @Test func editSyndicatedUpdatesSupportedCopiesAndRecordsDivergence() async throws {
+    // Publish to both networks first.
+    let receipt = PublishReceipt(publishedAt: Date.iso8601("2026-09-18T17:32:05Z"), remoteID: "1")
+    let setup = makePublisher(adapters: [
+      .bluesky: StubAdapter(network: .bluesky, result: .success(.published(receipt))),
+      .mastodon: StubAdapter(network: .mastodon, result: .success(.published(receipt))),
+    ])
+    let output = await setup.publish(body: "Original text\n", to: [blueskyTarget, mastodonTarget])
+    let fileURL = try #require(output.fileURL)
+    let stored = StoredPost(
+      file: try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8)),
+      fileURL: fileURL
+    )
+
+    // Mastodon supports edit (stub allows); Bluesky falls back to the default,
+    // which throws editingUnsupported.
+    let editor = makePublisher(adapters: [
+      .bluesky: StubAdapter(network: .bluesky, result: .success(.published(receipt))),
+      .mastodon: EditableStubAdapter(),
+    ])
+    let edit = await editor.editSyndicated(stored, newBody: "Corrected text\n", to: [blueskyTarget, mastodonTarget])
+
+    #expect(edit.results.count == 2)
+    let updated = try PostFile.parse(String(contentsOf: fileURL, encoding: .utf8))
+    #expect(updated.body == "Corrected text\n")
+    let blueskyCopy = try #require(updated.metadata.syndication.first { $0.network == .bluesky })
+    #expect(blueskyCopy.text == "Original text", "unsupported network keeps its live text on record")
+    let mastodonCopy = try #require(updated.metadata.syndication.first { $0.network == .mastodon })
+    #expect(mastodonCopy.text == nil, "edited copy matches the canonical body again")
+  }
+
   @Test func saveDraftWritesOneFileWithoutAdapters() throws {
     let publisher = makePublisher(adapters: [:])
 
@@ -176,6 +207,19 @@ private final class StubAdapter: SocialServiceAdapter, @unchecked Sendable {
   func publish(_ post: OutgoingPost, account: Account, credential: Credential) async throws -> PublishOutcome {
     receivedPosts.append(post)
     return try result.get()
+  }
+}
+
+private final class EditableStubAdapter: SocialServiceAdapter, @unchecked Sendable {
+  let network = Network.mastodon
+  private(set) var editedBodies: [String] = []
+
+  func publish(_ post: OutgoingPost, account: Account, credential: Credential) async throws -> PublishOutcome {
+    .skipped(reason: "publish unused in this stub")
+  }
+
+  func edit(body: String, remoteID: String, account: Account, credential: Credential) async throws {
+    editedBodies.append(body)
   }
 }
 

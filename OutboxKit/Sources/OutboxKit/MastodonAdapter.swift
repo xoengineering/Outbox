@@ -42,6 +42,25 @@ public struct MastodonAdapter: SocialServiceAdapter {
     return .published(receipt)
   }
 
+  /// Mastodon supports edits: `PUT /api/v1/statuses/:id`.
+  public func edit(body: String, remoteID: String, account: Account, credential: Credential) async throws {
+    guard case .accessToken(let token) = credential else { throw AdapterError.missingCredential }
+
+    var request = URLRequest(url: account.serverURL.appending(path: "api/v1/statuses/\(remoteID)"))
+    request.httpMethod = "PUT"
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.httpBody = try JSONEncoder().encode(StatusRequest(inReplyToID: nil, status: body))
+
+    let (data, response) = try await transport.send(request)
+    guard (200..<300).contains(response.statusCode) else {
+      throw AdapterError.httpError(
+        statusCode: response.statusCode,
+        message: String(bytes: data, encoding: .utf8) ?? ""
+      )
+    }
+  }
+
   private struct StatusRequest: Encodable {
     var inReplyToID: String?
     var status: String

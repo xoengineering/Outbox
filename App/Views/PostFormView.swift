@@ -168,6 +168,14 @@ struct PostFormView: View {
           Task { await saveEdits(to: post) }
         }
         .disabled(trimmedText.isEmpty || isWorking)
+        if post.file.metadata.isPublished {
+          Button("Update Copies") {
+            Task { await updateCopies(of: post) }
+          }
+          .buttonStyle(.borderedProminent)
+          .disabled(trimmedText.isEmpty || isWorking)
+          .help("Save, then push the edit to networks that allow it")
+        }
         if post.status == .draft || post.hasPendingTargets {
           Button("Publish") {
             Task { await publishExisting(post) }
@@ -314,6 +322,23 @@ struct PostFormView: View {
     } catch {
       errorMessage = error.localizedDescription
     }
+  }
+
+  private func updateCopies(of post: StoredPost) async {
+    isWorking = true
+    defer { isWorking = false }
+    do {
+      try await model.update(post, body: trimmedText + "\n", targetAccountIDs: editTargetIDs(for: post))
+    } catch {
+      errorMessage = error.localizedDescription
+      return
+    }
+    guard let updated = model.posts.first(where: { $0.id == post.id }) else {
+      errorMessage = "Couldn't reload the post after saving."
+      return
+    }
+    let results = await model.editPublished(updated, body: trimmedText + "\n")
+    publishRun = PublishRun(results: results)
   }
 
   private func publishExisting(_ post: StoredPost) async {

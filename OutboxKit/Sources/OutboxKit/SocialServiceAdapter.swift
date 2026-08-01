@@ -5,6 +5,14 @@ public protocol SocialServiceAdapter: Sendable {
   var network: Network { get }
 
   func publish(_ post: OutgoingPost, account: Account, credential: Credential) async throws -> PublishOutcome
+  func edit(body: String, remoteID: String, account: Account, credential: Credential) async throws
+}
+
+extension SocialServiceAdapter {
+  /// Most networks can't edit posts; adapters that can override this.
+  public func edit(body: String, remoteID: String, account: Account, credential: Credential) async throws {
+    throw AdapterError.editingUnsupported
+  }
 }
 
 /// What gets sent to a network: the text, plus a resolved reply reference when threading.
@@ -53,6 +61,7 @@ public enum PublishOutcome: Equatable, Sendable {
 }
 
 public enum AdapterError: Error, Equatable, LocalizedError {
+  case editingUnsupported
   case httpError(statusCode: Int, message: String)
   case invalidResponse
   case missingCredential
@@ -61,6 +70,8 @@ public enum AdapterError: Error, Equatable, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
+    case .editingUnsupported:
+      "This network doesn't support editing published posts."
     case .httpError(let statusCode, let message):
       "The server replied with HTTP \(statusCode): \(message)"
     case .invalidResponse:

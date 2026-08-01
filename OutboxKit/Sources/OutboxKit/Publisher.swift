@@ -115,6 +115,58 @@ public struct Publisher: Sendable {
     return Output(fileURL: stored.fileURL, results: results)
   }
 
+  /// Edits the canonical body and pushes the change to every copy whose network
+  /// supports edits. Copies that can't be edited keep their live text recorded
+  /// as a per-copy override, so the file reflects what's actually up.
+  public func editSyndicated(_ stored: StoredPost, newBody: String, to targets: [Target]) async -> Output {
+    var file = stored.file
+    let oldLiveDefault = stored.file.body.trimmingCharacters(in: .whitespacesAndNewlines)
+    let newTrimmed = newBody.trimmingCharacters(in: .whitespacesAndNewlines)
+    file.body = newBody
+    var results: [TargetResult] = []
+
+    for target in targets {
+      guard
+        let index = file.metadata.syndication.firstIndex(where: {
+          $0.account == target.account.handle && $0.network == target.account.network
+        })
+      else { continue }
+      let copy = file.metadata.syndication[index]
+      let liveText = copy.text ?? oldLiveDefault
+      guard let adapter = adapters[target.account.network] else {
+        if newTrimmed != liveText { file.metadata.syndication[index].text = liveText }
+        let outcome = PublishOutcome.skipped(reason: "No adapter for \(target.account.network.displayName).")
+        results.append(TargetResult(account: target.account, fileURL: stored.fileURL, outcome: .success(outcome)))
+        continue
+      }
+
+      do {
+        try await adapter.edit(
+          body: newBody,
+          remoteID: copy.remoteID,
+          account: target.account,
+          credential: target.credential
+        )
+        file.metadata.syndication[index].text = nil
+        let receipt = PublishReceipt(
+          publishedAt: copy.publishedAt, remoteID: copy.remoteID, remoteURL: copy.remoteURL)
+        results.append(
+          TargetResult(account: target.account, fileURL: stored.fileURL, outcome: .success(.published(receipt))))
+      } catch AdapterError.editingUnsupported {
+        if newTrimmed != liveText { file.metadata.syndication[index].text = liveText }
+        let outcome = PublishOutcome.skipped(
+          reason: "\(target.account.network.displayName) doesn't support edits — the live copy keeps its original text.")
+        results.append(TargetResult(account: target.account, fileURL: stored.fileURL, outcome: .success(outcome)))
+      } catch {
+        if newTrimmed != liveText { file.metadata.syndication[index].text = liveText }
+        results.append(TargetResult(account: target.account, fileURL: stored.fileURL, outcome: .failure(error)))
+      }
+    }
+
+    try? store.save(file, to: stored.fileURL)
+    return Output(fileURL: stored.fileURL, results: results)
+  }
+
   // MARK: - Internals
 
   private func syndicate(file: inout PostFile, at fileURL: URL, to targets: [Target]) async -> [TargetResult] {

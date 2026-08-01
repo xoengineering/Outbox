@@ -91,6 +91,22 @@ extension AppModel {
     return results
   }
 
+  /// Edits the canonical body and pushes the change to copies whose network
+  /// supports edits (Mastodon); others record their live text as divergence.
+  func editPublished(_ post: StoredPost, body: String) async -> [Publisher.TargetResult] {
+    let targets = post.file.metadata.syndication.compactMap { copy -> Publisher.Target? in
+      guard let account = account(for: copy.endpoint) else { return nil }
+      return Publisher.Target(account: account, credential: credential(for: account))
+    }
+    let results = await archiveFolder.withAccess { baseURL -> [Publisher.TargetResult] in
+      let store = PostStore(baseDirectory: baseURL)
+      return await self.makePublisher(store: store)
+        .editSyndicated(post, newBody: body, to: targets).results
+    }
+    await reloadPosts()
+    return results
+  }
+
   /// Updates a post's canonical body and (for unsyndicated endpoints) its targets.
   func update(_ post: StoredPost, body: String, targetAccountIDs: Set<UUID>) async throws {
     var file = post.file
