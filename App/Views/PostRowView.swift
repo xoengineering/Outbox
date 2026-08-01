@@ -23,6 +23,9 @@ struct PostRowView: View {
         )
         if post.file.metadata.isFavorite {
           Image(systemName: "star.fill")
+            .resizable()
+            .scaledToFit()
+            .frame(height: 16)
             .foregroundStyle(Palette.favorite)
         }
         Spacer()
