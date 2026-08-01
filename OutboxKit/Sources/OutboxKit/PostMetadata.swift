@@ -12,6 +12,8 @@ public struct PostMetadata: Equatable, Sendable {
   public var inReplyToSnapshot: ReplySnapshot?
   /// Starred within Outbox as a writing tool; never sent to any network.
   public var isFavorite: Bool
+  /// Media files stored next to this post.
+  public var media: [Attachment]
   /// Copies that exist on networks.
   public var syndication: [Syndication]
   /// Destinations still owed a copy.
@@ -23,6 +25,7 @@ public struct PostMetadata: Equatable, Sendable {
     inReplyToPost: String? = nil,
     inReplyToSnapshot: ReplySnapshot? = nil,
     isFavorite: Bool = false,
+    media: [Attachment] = [],
     syndication: [Syndication] = [],
     targets: [Endpoint] = []
   ) {
@@ -31,6 +34,7 @@ public struct PostMetadata: Equatable, Sendable {
     self.inReplyToPost = inReplyToPost
     self.inReplyToSnapshot = inReplyToSnapshot
     self.isFavorite = isFavorite
+    self.media = media
     self.syndication = syndication
     self.targets = targets
   }

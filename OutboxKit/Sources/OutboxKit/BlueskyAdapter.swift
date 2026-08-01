@@ -32,8 +32,15 @@ public struct BlueskyAdapter: SocialServiceAdapter {
       password: password,
       serverURL: account.serverURL
     )
+    var images: [ImageEmbed] = []
+    for attachment in post.attachments {
+      let blob = try await uploadBlob(attachment, session: session, serverURL: account.serverURL)
+      images.append(ImageEmbed(alt: attachment.alt ?? "", image: blob))
+    }
+
     let record = try await createRecord(
       body: post.body,
+      embed: images.isEmpty ? nil : ImagesEmbed(images: images),
       reply: reply,
       session: session,
       serverURL: account.serverURL
@@ -75,14 +82,38 @@ public struct BlueskyAdapter: SocialServiceAdapter {
     )
   }
 
+  /// Uploads media via `com.atproto.repo.uploadBlob`, returning the blob reference.
+  private func uploadBlob(
+    _ attachment: OutgoingAttachment,
+    session: SessionResponse,
+    serverURL: URL
+  ) async throws -> Blob {
+    var request = URLRequest(url: serverURL.appending(path: "xrpc/com.atproto.repo.uploadBlob"))
+    request.httpMethod = "POST"
+    request.setValue(attachment.mimeType, forHTTPHeaderField: "Content-Type")
+    request.setValue("Bearer \(session.accessJwt)", forHTTPHeaderField: "Authorization")
+    request.httpBody = attachment.data
+
+    let (data, response) = try await transport.send(request)
+    guard (200..<300).contains(response.statusCode) else {
+      throw AdapterError.httpError(
+        statusCode: response.statusCode,
+        message: String(bytes: data, encoding: .utf8) ?? ""
+      )
+    }
+    return try JSONDecoder().decode(UploadBlobResponse.self, from: data).blob
+  }
+
   private func createRecord(
     body: String,
+    embed: ImagesEmbed?,
     reply: ReplyRefs?,
     session: SessionResponse,
     serverURL: URL
   ) async throws -> RecordResponse {
     let record = PostRecord(
       createdAt: ISO8601.string(from: now()),
+      embed: embed,
       facets: LinkFacets.detect(in: body),
       reply: reply,
       text: body
@@ -137,6 +168,7 @@ public struct BlueskyAdapter: SocialServiceAdapter {
 
   private struct PostRecord: Encodable {
     var createdAt: String
+    var embed: ImagesEmbed?
     var facets: [LinkFacets.Facet]
     var reply: ReplyRefs?
     var text: String
@@ -144,11 +176,54 @@ public struct BlueskyAdapter: SocialServiceAdapter {
 
     enum CodingKeys: String, CodingKey {
       case createdAt
+      case embed
       case facets
       case reply
       case text
       case type = "$type"
     }
+  }
+
+  struct ImagesEmbed: Encodable, Equatable {
+    var images: [ImageEmbed]
+    var type = "app.bsky.embed.images"
+
+    enum CodingKeys: String, CodingKey {
+      case images
+      case type = "$type"
+    }
+  }
+
+  struct ImageEmbed: Encodable, Equatable {
+    var alt: String
+    var image: Blob
+  }
+
+  /// An atproto blob reference, echoed back into the record verbatim.
+  struct Blob: Codable, Equatable {
+    var mimeType: String
+    var ref: BlobRef
+    var size: Int
+    var type = "blob"
+
+    enum CodingKeys: String, CodingKey {
+      case mimeType
+      case ref
+      case size
+      case type = "$type"
+    }
+  }
+
+  struct BlobRef: Codable, Equatable {
+    var link: String
+
+    enum CodingKeys: String, CodingKey {
+      case link = "$link"
+    }
+  }
+
+  private struct UploadBlobResponse: Decodable {
+    var blob: Blob
   }
 
   struct ReplyRefs: Encodable, Equatable {

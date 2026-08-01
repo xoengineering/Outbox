@@ -49,6 +49,7 @@ public struct Publisher: Sendable {
   /// A failure on one target never blocks the others; failed targets stay in
   /// `targets`, so re-publishing retries exactly what's missing.
   public func publish(
+    attachments: [PendingAttachment] = [],
     body: String,
     inReplyTo: URL? = nil,
     inReplyToPost: String? = nil,
@@ -66,6 +67,8 @@ public struct Publisher: Sendable {
     let fileURL: URL
     do {
       fileURL = try store.save(file)
+      file.metadata.media = try writeAttachments(attachments, to: fileURL)
+      if !attachments.isEmpty { try store.save(file, to: fileURL) }
     } catch {
       let results = targets.map {
         TargetResult(account: $0.account, fileURL: nil, outcome: .failure(error))
@@ -73,19 +76,21 @@ public struct Publisher: Sendable {
       return Output(fileURL: nil, results: results)
     }
 
-    let results = await syndicate(file: &file, at: fileURL, to: targets)
+    let outgoing = outgoingAttachments(from: attachments)
+    let results = await syndicate(file: &file, at: fileURL, attachments: outgoing, to: targets)
     return Output(fileURL: fileURL, results: results)
   }
 
   /// Writes one draft Post file without touching the network.
   public func saveDraft(
+    attachments: [PendingAttachment] = [],
     body: String,
     inReplyTo: URL? = nil,
     inReplyToPost: String? = nil,
     inReplyToSnapshot: ReplySnapshot? = nil,
     for targets: [Target]
   ) -> Output {
-    let file = draftFile(
+    var file = draftFile(
       body: body,
       inReplyTo: inReplyTo,
       inReplyToPost: inReplyToPost,
@@ -94,6 +99,8 @@ public struct Publisher: Sendable {
     )
     do {
       let fileURL = try store.save(file)
+      file.metadata.media = try writeAttachments(attachments, to: fileURL)
+      if !attachments.isEmpty { try store.save(file, to: fileURL) }
       let results = targets.map {
         TargetResult(
           account: $0.account, fileURL: fileURL, outcome: .success(.skipped(reason: "Saved as draft.")))
@@ -111,7 +118,8 @@ public struct Publisher: Sendable {
   /// updating the file in place as copies land.
   public func publishExisting(_ stored: StoredPost, to targets: [Target]) async -> Output {
     var file = stored.file
-    let results = await syndicate(file: &file, at: stored.fileURL, to: targets)
+    let attachments = store.outgoingAttachments(for: stored)
+    let results = await syndicate(file: &file, at: stored.fileURL, attachments: attachments, to: targets)
     return Output(fileURL: stored.fileURL, results: results)
   }
 
@@ -170,7 +178,28 @@ public struct Publisher: Sendable {
 
   // MARK: - Internals
 
-  private func syndicate(file: inout PostFile, at fileURL: URL, to targets: [Target]) async -> [TargetResult] {
+  private func writeAttachments(_ attachments: [PendingAttachment], to fileURL: URL) throws -> [Attachment] {
+    try attachments.map { pending in
+      Attachment(alt: pending.alt, fileName: try store.addAttachment(pending, to: fileURL))
+    }
+  }
+
+  private func outgoingAttachments(from attachments: [PendingAttachment]) -> [OutgoingAttachment] {
+    attachments.map { pending in
+      OutgoingAttachment(
+        alt: pending.alt,
+        data: pending.data,
+        mimeType: Attachment(fileName: "media.\(pending.fileExtension)").mimeType
+      )
+    }
+  }
+
+  private func syndicate(
+    file: inout PostFile,
+    at fileURL: URL,
+    attachments: [OutgoingAttachment],
+    to targets: [Target]
+  ) async -> [TargetResult] {
     var results: [TargetResult] = []
 
     for target in targets {
@@ -191,7 +220,11 @@ public struct Publisher: Sendable {
           )
         }
 
-        let outgoing = OutgoingPost(body: file.body, replyTo: resolvedReply)
+        let outgoing = OutgoingPost(
+          attachments: attachments,
+          body: file.body,
+          replyTo: resolvedReply
+        )
         let outcome = try await adapter.publish(outgoing, account: target.account, credential: target.credential)
         if case .published(let receipt) = outcome {
           file.metadata.syndication.append(

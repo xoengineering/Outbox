@@ -17,10 +17,16 @@ extension SocialServiceAdapter {
 
 /// What gets sent to a network: the text, plus a resolved reply reference when threading.
 public struct OutgoingPost: Equatable, Sendable {
+  public var attachments: [OutgoingAttachment]
   public var body: String
   public var replyTo: ResolvedReply?
 
-  public init(body: String, replyTo: ResolvedReply? = nil) {
+  public init(
+    attachments: [OutgoingAttachment] = [],
+    body: String,
+    replyTo: ResolvedReply? = nil
+  ) {
+    self.attachments = attachments
     self.body = body
     self.replyTo = replyTo
   }

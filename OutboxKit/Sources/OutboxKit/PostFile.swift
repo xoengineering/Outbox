@@ -66,12 +66,24 @@ public struct PostFile: Equatable, Sendable {
         lines.append(textLine.isEmpty ? "" : "    \(textLine)")
       }
     }
+    appendMedia(to: &lines)
     appendTargets(to: &lines)
     appendSyndication(to: &lines)
     lines.append(Self.delimiter)
     lines.append("")
     lines.append(body)
     return lines.joined(separator: "\n")
+  }
+
+  private func appendMedia(to lines: inout [String]) {
+    guard !metadata.media.isEmpty else { return }
+    lines.append("media:")
+    for attachment in metadata.media {
+      lines.append("  - file: \(quoted(attachment.fileName))")
+      if let alt = attachment.alt, !alt.isEmpty {
+        lines.append("    alt: \(quoted(alt))")
+      }
+    }
   }
 
   private func appendTargets(to lines: inout [String]) {
@@ -126,9 +138,18 @@ public struct PostFile: Equatable, Sendable {
       inReplyToPost: fields["in_reply_to_post"] as? String,
       inReplyToSnapshot: snapshot(from: fields["in_reply_to_snapshot"] as? [String: Any]),
       isFavorite: fields["favorite"] as? Bool ?? false,
+      media: media(from: fields["media"] as? [[String: Any]]),
       syndication: syndication,
       targets: targets
     )
+  }
+
+  private static func media(from entries: [[String: Any]]?) -> [Attachment] {
+    guard let entries else { return [] }
+    return entries.compactMap { entry in
+      guard let fileName = entry["file"] as? String else { return nil }
+      return Attachment(alt: entry["alt"] as? String, fileName: fileName)
+    }
   }
 
   private static func snapshot(from fields: [String: Any]?) -> ReplySnapshot? {

@@ -62,8 +62,49 @@ public struct PostStore: Sendable {
     return posts.sorted { $0.file.metadata.createdAt > $1.file.metadata.createdAt }
   }
 
+  /// Deletes a post file and any media stored with it.
   public func delete(_ post: StoredPost) throws {
+    for attachment in post.file.metadata.media {
+      try? deleteAttachment(named: attachment.fileName, for: post.fileURL)
+    }
     try FileManager.default.removeItem(at: post.fileURL)
+  }
+
+  // MARK: - Attachments
+
+  /// Writes attachment bytes next to a post file, named after it
+  /// (`01-happy-bday-1.jpg`), and returns the stored file name.
+  public func addAttachment(_ pending: PendingAttachment, to postFileURL: URL) throws -> String {
+    let directory = postFileURL.deletingLastPathComponent()
+    let stem = postFileURL.deletingPathExtension().lastPathComponent
+    let siblings = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+    // Number sequentially across every media file for this post, whatever its type.
+    var index = 1
+    while siblings.contains(where: { $0.hasPrefix("\(stem)-\(index).") }) {
+      index += 1
+    }
+    let fileName = "\(stem)-\(index).\(pending.fileExtension)"
+    try pending.data.write(to: directory.appendingPathComponent(fileName), options: .atomic)
+    return fileName
+  }
+
+  public func attachmentURL(named fileName: String, for postFileURL: URL) -> URL {
+    postFileURL.deletingLastPathComponent().appendingPathComponent(fileName)
+  }
+
+  public func deleteAttachment(named fileName: String, for postFileURL: URL) throws {
+    let url = attachmentURL(named: fileName, for: postFileURL)
+    guard FileManager.default.fileExists(atPath: url.path) else { return }
+    try FileManager.default.removeItem(at: url)
+  }
+
+  /// Loads a post's attachments with their bytes, ready to upload.
+  public func outgoingAttachments(for post: StoredPost) -> [OutgoingAttachment] {
+    post.file.metadata.media.compactMap { attachment in
+      guard let data = try? Data(contentsOf: attachmentURL(named: attachment.fileName, for: post.fileURL))
+      else { return nil }
+      return OutgoingAttachment(alt: attachment.alt, data: data, mimeType: attachment.mimeType)
+    }
   }
 
   /// The archive-relative path of a file, used for `in_reply_to_post` references.
