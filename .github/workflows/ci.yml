@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cibuild:
+    name: Lint, test, build
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: OutboxKit/.build
+          key: swiftpm-${{ runner.os }}-${{ hashFiles('OutboxKit/Package.resolved', 'OutboxKit/Package.swift') }}
+          restore-keys: swiftpm-${{ runner.os }}-
+
+      - name: Install tools
+        run: |
+          brew install xcodegen swiftlint
+
+      # script/build skips signing when CI is set, since runners have no identity.
+      - name: Lint, test, and build both platforms
+        run: script/cibuild

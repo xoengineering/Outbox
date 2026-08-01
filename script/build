@@ -7,11 +7,20 @@ cd "$(dirname "$0")/.."
 
 script/generate
 
+# Local builds sign with the team in Local.xcconfig; CI has no identity.
+if [ -n "$CI" ]; then
+  SIGNING="CODE_SIGNING_ALLOWED=NO"
+else
+  SIGNING=""
+fi
+
 case "${1:-macos}" in
   macos)
+    # shellcheck disable=SC2086
     xcodebuild -project Outbox.xcodeproj \
       -scheme Outbox \
       -destination "platform=macOS" \
+      $SIGNING \
       build
     ;;
   ios)
