@@ -39,6 +39,9 @@ All notable changes to Outbox are documented here.
 - Add `in_reply_to` and `composition` frontmatter fields.
 - Replace SF Symbol placeholders with real Bluesky, Mastodon, and Threads brand
   glyphs (Simple Icons SVGs, template-rendered so they tint like symbols).
+- Add favoriting within Outbox (never sent to networks): star toggle on the
+  post view, `favorite: true` frontmatter, star pill filter, and Favorites
+  sidebar rows globally and per account.
 - Move accounts and archive-folder settings into a proper Settings window
   (⌘, on macOS, General + Accounts tabs); account removal now asks for
   confirmation and explains that archived files stay on disk.

@@ -21,6 +21,10 @@ struct PostRowView: View {
           network: post.file.metadata.network,
           size: 16
         )
+        if post.file.metadata.isFavorite {
+          Image(systemName: "star.fill")
+            .foregroundStyle(Palette.favorite)
+        }
         Spacer()
         if post.status == .draft {
           Text("Draft")

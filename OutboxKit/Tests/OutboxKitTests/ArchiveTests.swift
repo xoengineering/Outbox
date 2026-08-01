@@ -49,6 +49,22 @@ import Testing
     #expect(try store.allPosts() == [])
   }
 
+  @Test func roundTripsFavoriteFlag() throws {
+    let text = try #require(
+      Bundle.module.url(
+        forResource: "bluesky-favorite-draft.md", withExtension: nil, subdirectory: "Fixtures"
+      )
+      .map { try String(contentsOf: $0, encoding: .utf8) })
+    let file = try PostFile.parse(text)
+
+    #expect(file.metadata.isFavorite)
+    #expect(try file.serialized() == text)
+
+    var unfavorited = file
+    unfavorited.metadata.isFavorite = false
+    #expect(try !unfavorited.serialized().contains("favorite:"))
+  }
+
   @Test func roundTripsReplyAndCompositionFields() throws {
     let text = try #require(
       Bundle.module.url(forResource: "mastodon-reply-draft.md", withExtension: nil, subdirectory: "Fixtures")

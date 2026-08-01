@@ -25,6 +25,15 @@ struct PostDetailView: View {
     .navigationTitle("")
     .toolbar {
       ToolbarItem {
+        Button(
+          post.file.metadata.isFavorite ? "Unfavorite" : "Favorite",
+          systemImage: post.file.metadata.isFavorite ? "star.fill" : "star"
+        ) {
+          Task { await model.toggleFavorite(post) }
+        }
+        .help(post.file.metadata.isFavorite ? "Remove from favorites" : "Add to favorites")
+      }
+      ToolbarItem {
         Button("Reply", systemImage: "arrowshape.turn.up.left") {
           model.startReply(to: post)
         }

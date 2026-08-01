@@ -47,6 +47,9 @@ public struct PostFile: Equatable, Sendable {
     lines.append("network: \(metadata.network.rawValue)")
     lines.append("account: \(quoted(metadata.account))")
     lines.append("created_at: \(iso8601(metadata.createdAt))")
+    if metadata.isFavorite {
+      lines.append("favorite: true")
+    }
     if let compositionID = metadata.compositionID {
       lines.append("composition: \(compositionID.uuidString)")
     }
@@ -87,6 +90,7 @@ public struct PostFile: Equatable, Sendable {
       compositionID: (fields["composition"] as? String).flatMap(UUID.init(uuidString:)),
       createdAt: createdAt,
       inReplyTo: try url(from: fields["in_reply_to"], field: "in_reply_to"),
+      isFavorite: fields["favorite"] as? Bool ?? false,
       network: network,
       publishedAt: date(from: fields["published_at"]),
       remoteID: (fields["id"]).map { "\($0)" },

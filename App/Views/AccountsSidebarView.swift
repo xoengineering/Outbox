@@ -22,6 +22,7 @@ struct AccountsSidebarView: View {
           statusRow(accountID: nil, status: nil, indented: false)
           statusRow(accountID: nil, status: .published, indented: false)
           statusRow(accountID: nil, status: .draft, indented: false)
+          favoritesRow(accountID: nil, indented: false)
 
           Text("Accounts")
             .font(.caption.weight(.semibold))
@@ -37,6 +38,7 @@ struct AccountsSidebarView: View {
                 statusRow(accountID: account.id, status: nil, indented: true)
                 statusRow(accountID: account.id, status: .published, indented: true)
                 statusRow(accountID: account.id, status: .draft, indented: true)
+                favoritesRow(accountID: account.id, indented: true)
               }
             }
             .clipped()
@@ -102,6 +104,7 @@ struct AccountsSidebarView: View {
       AppModel.SidebarSelection(),
       AppModel.SidebarSelection(status: .published),
       AppModel.SidebarSelection(status: .draft),
+      AppModel.SidebarSelection(onlyFavorites: true),
     ]
     for account in model.accounts {
       ordered.append(AppModel.SidebarSelection(accountID: account.id, isAccountRow: true))
@@ -109,6 +112,7 @@ struct AccountsSidebarView: View {
       ordered.append(AppModel.SidebarSelection(accountID: account.id))
       ordered.append(AppModel.SidebarSelection(accountID: account.id, status: .published))
       ordered.append(AppModel.SidebarSelection(accountID: account.id, status: .draft))
+      ordered.append(AppModel.SidebarSelection(accountID: account.id, onlyFavorites: true))
     }
     return ordered
   }
@@ -219,6 +223,27 @@ struct AccountsSidebarView: View {
   }
 
   /// Accent highlight when the sidebar owns focus, quiet gray when it doesn't.
+  private func favoritesRow(accountID: UUID?, indented: Bool) -> some View {
+    let selection = AppModel.SidebarSelection(accountID: accountID, onlyFavorites: true)
+    let isSelected = model.sidebarSelection == selection
+    let emphasized = isSelected && isFocused
+    return Button {
+      select(selection)
+    } label: {
+      Label("Favorites", systemImage: "star")
+        .foregroundStyle(emphasized ? Palette.selectedContent : AnyShapeStyle(.primary))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .padding(.leading, indented ? 32 : 6)
+    .padding(.trailing, 6)
+    .padding(.vertical, 5)
+    .background(rowBackground(isSelected: isSelected))
+    .transition(.move(edge: .top).combined(with: .opacity))
+    .id(selection)
+  }
+
   private func rowBackground(isSelected: Bool) -> some View {
     let fill: AnyShapeStyle =
       if !isSelected {

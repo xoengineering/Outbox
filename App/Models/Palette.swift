@@ -9,6 +9,7 @@ enum Palette {
 
   static let danger = Color.red
   static let draft = Color.orange
+  static let favorite = Color.yellow
   static let hashtag = Color.blue
   static let mention = Color.purple
   static let published = Color.green

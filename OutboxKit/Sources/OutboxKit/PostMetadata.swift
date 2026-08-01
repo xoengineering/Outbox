@@ -9,6 +9,8 @@ public struct PostMetadata: Equatable, Sendable {
   public var createdAt: Date
   /// Remote URL of the post this one replies to.
   public var inReplyTo: URL?
+  /// Starred within Outbox as a writing tool; never sent to any network.
+  public var isFavorite: Bool
   public var network: Network
   public var publishedAt: Date?
   public var remoteID: String?
@@ -19,6 +21,7 @@ public struct PostMetadata: Equatable, Sendable {
     compositionID: UUID? = nil,
     createdAt: Date,
     inReplyTo: URL? = nil,
+    isFavorite: Bool = false,
     network: Network,
     publishedAt: Date? = nil,
     remoteID: String? = nil,
@@ -28,6 +31,7 @@ public struct PostMetadata: Equatable, Sendable {
     self.compositionID = compositionID
     self.createdAt = createdAt
     self.inReplyTo = inReplyTo
+    self.isFavorite = isFavorite
     self.network = network
     self.publishedAt = publishedAt
     self.remoteID = remoteID

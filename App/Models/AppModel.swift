@@ -13,6 +13,7 @@ import OutboxKit
     /// Distinguishes the account's own row from its "All Posts" child, so both
     /// are selectable — they filter identically.
     var isAccountRow = false
+    var onlyFavorites = false
     var status: StoredPost.Status?
   }
 
@@ -36,7 +37,8 @@ import OutboxKit
   var posts: [StoredPost] = []
   var searchText = ""
   var selectedPostID: URL?
-  /// Pill toggle filters on the posts list; empty sets mean no filtering.
+  /// Pill toggle filters on the posts list; empty/false means no filtering.
+  var favoritesFilter = false
   var networkFilters: Set<Network> = []
   var statusFilters: Set<StoredPost.Status> = []
   var sidebarSelection: SidebarSelection? = SidebarSelection()
@@ -127,11 +129,17 @@ import OutboxKit
     if let status = sidebarSelection?.status {
       filtered = filtered.filter { $0.status == status }
     }
+    if sidebarSelection?.onlyFavorites == true {
+      filtered = filtered.filter(\.file.metadata.isFavorite)
+    }
     if !statusFilters.isEmpty {
       filtered = filtered.filter { statusFilters.contains($0.status) }
     }
     if !networkFilters.isEmpty {
       filtered = filtered.filter { networkFilters.contains($0.file.metadata.network) }
+    }
+    if favoritesFilter {
+      filtered = filtered.filter(\.file.metadata.isFavorite)
     }
     let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     if !query.isEmpty {
@@ -154,11 +162,21 @@ import OutboxKit
       scope = "All Posts"
     }
 
+    if sidebarSelection?.onlyFavorites == true { return "\(scope) — Favorites" }
     switch sidebarSelection?.status {
     case .draft: return "\(scope) — Drafts"
     case .published: return "\(scope) — Published"
     case nil: return scope
     }
+  }
+
+  func toggleFavorite(_ post: StoredPost) async {
+    var file = post.file
+    file.metadata.isFavorite.toggle()
+    try? await archiveFolder.withAccess { baseURL in
+      try PostStore(baseDirectory: baseURL).save(file, to: post.fileURL)
+    }
+    await reloadPosts()
   }
 
   // MARK: - Composing

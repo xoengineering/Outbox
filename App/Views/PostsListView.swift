@@ -44,6 +44,7 @@ struct PostsListView: View {
           allPill
           statusPill("Drafts", status: .draft)
           statusPill("Published", status: .published)
+          favoritesPill
           Divider()
             .frame(height: 14)
           ForEach(Network.allCases) { network in
@@ -78,10 +79,29 @@ struct PostsListView: View {
     }
   }
 
+  /// A star pill filtering to favorited posts.
+  private var favoritesPill: some View {
+    let isOn = model.favoritesFilter
+    let tint = AnyShapeStyle(Palette.favorite)
+    return Button {
+      model.favoritesFilter.toggle()
+    } label: {
+      Image(systemName: isOn ? "star.fill" : "star")
+        .font(.caption2.weight(.semibold))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Palette.capsuleFill(tint, isOn: isOn), in: Capsule())
+        .foregroundStyle(Palette.capsuleContent(tint, isOn: isOn))
+    }
+    .buttonStyle(.plain)
+    .help("Show only favorites")
+  }
+
   /// Clears every pill filter; highlighted when nothing is filtered.
   private var allPill: some View {
-    let isOn = model.statusFilters.isEmpty && model.networkFilters.isEmpty
+    let isOn = model.statusFilters.isEmpty && model.networkFilters.isEmpty && !model.favoritesFilter
     return Button {
+      model.favoritesFilter = false
       model.statusFilters.removeAll()
       model.networkFilters.removeAll()
     } label: {
