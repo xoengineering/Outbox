@@ -1,9 +1,10 @@
 import OutboxKit
 import SwiftUI
 
-/// An account's avatar and its network glyph side by side, as one capsule:
-/// `[avatar | icon]`. The avatar fills the rounded left end; the brand-colored
-/// glyph sits in its own cell on the right.
+/// An account's avatar and its network glyph side by side, as one `[avatar | icon]` capsule.
+///
+/// The avatar fills the rounded left end; the brand-colored glyph sits in its
+/// own cell on the right.
 struct AvatarNetworkPairView: View {
   var avatarURL: URL?
   var network: Network
