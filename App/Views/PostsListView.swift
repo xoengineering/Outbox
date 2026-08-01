@@ -9,28 +9,48 @@ struct PostsListView: View {
 
   var body: some View {
     @Bindable var model = model
-    List(model.visiblePosts, selection: $model.selectedPostID) { post in
-      PostRowView(
-        isEmphasized: isFocused && model.selectedPostID == post.id,
-        pairs: model.endpointPairs(for: post),
-        post: post
-      )
-      .listRowSeparator(.hidden)
-    }
-    .focused($isFocused)
-    // macOS routes ⌃D (the text system's deleteForward:) into the list, where it
-    // strangely moves selection. Swallow it; text views keep their native ⌃D.
-    .onKeyPress { press in
-      if press.key == "d" && press.modifiers.contains(.control) { return .handled }
-      if press.key == .tab {
-        if press.modifiers.contains(.shift) {
-          model.focusRequest = .accounts
-        } else {
-          model.focusRequest = model.detailMode != .browse ? .form : .accounts
-        }
-        return .handled
+    ScrollViewReader { proxy in
+      List(model.visiblePosts, selection: $model.selectedPostID) { post in
+        PostRowView(
+          isEmphasized: isFocused && model.selectedPostID == post.id,
+          pairs: model.endpointPairs(for: post),
+          post: post
+        )
+        .listRowSeparator(.hidden)
       }
-      return .ignored
+      .focused($isFocused)
+      // macOS routes ⌃D (the text system's deleteForward:) into the list, where it
+      // strangely moves selection. Swallow it; text views keep their native ⌃D.
+      .onKeyPress { press in
+        if press.key == "d" && press.modifiers.contains(.control) { return .handled }
+        if press.key == .tab {
+          if press.modifiers.contains(.shift) {
+            model.focusRequest = .accounts
+          } else {
+            model.focusRequest = model.detailMode != .browse ? .form : .accounts
+          }
+          return .handled
+        }
+        guard press.modifiers.isEmpty else { return .ignored }
+        switch press.key {
+        case "j":
+          model.moveSelection(1)
+          proxy.scrollTo(model.selectedPostID)
+          return .handled
+        case "k":
+          model.moveSelection(-1)
+          proxy.scrollTo(model.selectedPostID)
+          return .handled
+        case ".":
+          if let post = model.selectedPost {
+            Task { await model.toggleFavorite(post) }
+            return .handled
+          }
+          return .ignored
+        default:
+          return .ignored
+        }
+      }
     }
     #if os(macOS)
       .focusSection()

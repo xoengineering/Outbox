@@ -212,6 +212,18 @@ import OutboxKit
     focusRequest = columns[min(max(index + delta, 0), columns.count - 1)]
   }
 
+  /// Moves the posts-list selection down (+1) or up (-1) through visible posts.
+  func moveSelection(_ delta: Int) {
+    let visible = visiblePosts
+    guard !visible.isEmpty else { return }
+    guard let current = selectedPostID, let index = visible.firstIndex(where: { $0.id == current })
+    else {
+      selectedPostID = delta > 0 ? visible.first?.id : visible.last?.id
+      return
+    }
+    selectedPostID = visible[min(max(index + delta, 0), visible.count - 1)].id
+  }
+
   /// Clears every pill filter (the "All" pill).
   func clearFilters() {
     favoritesFilter = false
