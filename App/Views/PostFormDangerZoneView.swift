@@ -1,7 +1,7 @@
 import OutboxKit
 import SwiftUI
 
-/// The edit form's delete affordance, with confirmation.
+/// The edit form's trash affordance, with confirmation.
 struct PostFormDangerZoneView: View {
   @Environment(AppModel.self) private var model
   @State private var isConfirming = false
@@ -15,21 +15,23 @@ struct PostFormDangerZoneView: View {
           .font(.caption.weight(.semibold))
           .foregroundStyle(.secondary)
         Spacer()
-        Button("Delete Post…", role: .destructive) {
+        Button("Move to Trash…", role: .destructive) {
           isConfirming = true
         }
       }
     }
     .confirmationDialog(
-      "Delete this post file?",
+      "Move this post to the Trash?",
       isPresented: $isConfirming,
       titleVisibility: .visible
     ) {
-      Button("Delete", role: .destructive) {
-        Task { await model.deletePost(post) }
+      Button("Move to Trash", role: .destructive) {
+        Task { await model.trashPost(post) }
       }
     } message: {
-      Text("This removes the local file only. Copies already on networks stay published.")
+      Text(
+        "Its file and any media move to the Trash, so you can put them back. "
+          + "Copies already on networks stay published.")
     }
   }
 }

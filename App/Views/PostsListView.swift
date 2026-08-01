@@ -53,7 +53,7 @@ struct PostsListView: View {
             Button("Move to Trash Without Asking", role: .destructive) {
               Task { await model.trashPost(post) }
             }
-            .keyboardShortcut(.delete, modifiers: .option)
+            .keyboardShortcut(.delete, modifiers: .command)
           }
         }
       }
@@ -62,8 +62,8 @@ struct PostsListView: View {
       // strangely moves selection. Swallow it; text views keep their native ⌃D.
       .onKeyPress { press in
         if press.key == "d" && press.modifiers.contains(.control) { return .handled }
-        // ⌥⌫ trashes without stopping to ask.
-        if press.key == .delete, press.modifiers.contains(.option) {
+        // ⌘⌫ trashes without stopping to ask.
+        if press.key == .delete, press.modifiers.contains(.command) {
           if let post = model.selectedPost, isTrashable(post) {
             Task { await model.trashPost(post) }
           }
