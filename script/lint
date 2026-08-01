@@ -1,9 +1,10 @@
 #!/bin/sh
 # script/lint: check formatting (Apple structure) and style (community conventions).
+# --strict on both so findings fail the build instead of scrolling past.
 
 set -e
 
 cd "$(dirname "$0")/.."
 
-swift format lint --recursive App OutboxKit
-swiftlint lint --quiet
+swift format lint --strict --recursive App OutboxKit
+swiftlint lint --strict --quiet

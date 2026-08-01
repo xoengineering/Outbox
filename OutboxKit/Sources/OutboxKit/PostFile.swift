@@ -25,7 +25,7 @@ public struct PostFile: Equatable, Sendable {
 
   private static let delimiter = "---"
 
-  public static func parse(_ text: String) throws -> PostFile {
+  public static func parse(_ text: String) throws -> Self {
     let lines = text.components(separatedBy: "\n")
     guard lines.first == delimiter else { throw ParseError.missingFrontmatter }
     guard let closingIndex = lines.dropFirst().firstIndex(of: delimiter) else {
@@ -42,7 +42,7 @@ public struct PostFile: Equatable, Sendable {
     if bodyLines.first?.isEmpty == true { bodyLines.removeFirst() }
     let body = bodyLines.joined(separator: "\n")
 
-    return PostFile(body: body, metadata: try metadata(from: rawFields))
+    return Self(body: body, metadata: try metadata(from: rawFields))
   }
 
   public func serialized() throws -> String {

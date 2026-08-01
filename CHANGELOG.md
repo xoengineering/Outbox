@@ -4,6 +4,10 @@ All notable changes to Outbox are documented here.
 
 ## Unreleased
 
+- Lint is enforcing, not advisory: `swift format lint` and `swiftlint` both run
+  `--strict`, so findings fail `script/lint` and CI instead of scrolling past.
+- Enable a curated set of SwiftLint opt-in rules; let swift-format own line width.
+
 - Add media attachments with alt text: pick files in the composer, edit alt text,
   remove them, and see them rendered in the post view. Files live beside the post
   in its day folder and upload to Mastodon and Bluesky.

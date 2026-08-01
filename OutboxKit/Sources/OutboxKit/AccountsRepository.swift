@@ -10,9 +10,9 @@ public struct AccountsRepository: Sendable {
     self.fileURL = fileURL
   }
 
-  public static func inApplicationSupport() -> AccountsRepository {
+  public static func inApplicationSupport() -> Self {
     let directory = URL.applicationSupportDirectory.appending(path: "Outbox", directoryHint: .isDirectory)
-    return AccountsRepository(fileURL: directory.appending(path: "accounts.json"))
+    return Self(fileURL: directory.appending(path: "accounts.json"))
   }
 
   public func load() -> [Account] {

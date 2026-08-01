@@ -2,14 +2,33 @@ included:
   - App
   - OutboxKit/Sources
   - OutboxKit/Tests
-line_length: 125
+
+# swift-format owns line width (lineLength in .swift-format); don't double-report it.
+disabled_rules:
+  - line_length
+  - opening_brace # swift-format wraps braces after multiline conditions
+  - todo
+  - trailing_comma # swift-format inserts trailing commas
+
+# Unambiguous improvements rather than taste calls.
+opt_in_rules:
+  - contains_over_filter_count
+  - contains_over_first_not_nil
+  - empty_count
+  - explicit_init
+  - fatal_error_message
+  - first_where
+  - joined_default_parameter
+  - last_where
+  - prefer_self_in_static_references
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+
 identifier_name:
   min_length: 2
 nesting:
   type_level: 2
 type_body_length:
   warning: 350
-disabled_rules:
-  - opening_brace # swift-format owns formatting; it wraps braces after multiline conditions
-  - todo
-  - trailing_comma # swift-format owns formatting and inserts trailing commas
