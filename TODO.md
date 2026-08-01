@@ -121,37 +121,40 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
 ## Milestone 3.6 — Shane's punch list (2026-07-31)
 
 Settings
-- [ ] Toggle: show/hide avatars in post row footers (all-on is a bit NASCAR)
-- [ ] "Open folder in Finder" button for the archive folder
-- [ ] Date format choice: `Sep 18, 1979` / `1979-09-18` / `09/18/1979`
-- [ ] Post content size for the detail column (not the list): xs s m l xl
+- [x] Toggle: show/hide avatars in post row footers (all-on is a bit NASCAR)
+- [x] "Open folder in Finder" button for the archive folder
+- [x] Date format choice: `Sep 18, 1979` / `1979-09-18` / `09/18/1979`
+- [x] Post content size for the detail column (not the list): xs s m l xl
 
 Tools
-- [ ] Import all my posts from signed-in sites — all sites or one at a time.
-      Collisions: smart merge; when in doubt keep dupes and log for manual review
-- [ ] De-duper: used by import, also manually invocable. Photos.app-style list of
-      dupe candidates, yes/no each, then merge
+- [x] Import all my posts from signed-in sites — all sites or one at a time.
+      Collisions: smart merge; when in doubt keep dupes for manual review
+- [x] De-duper: used by import, also manually invocable (Settings → Tools).
+      Photos.app-style candidate list, Merge/Keep All per group
 
 Keyboard
-- [ ] Fix: ⇥ isn't moving focus between columns anymore
-- [ ] ⌘R reply to selected post
-- [ ] ⌘←/⌘→ move focus between columns
-- [ ] ⌘E edit selected post
-- [ ] ⌃0 clear filters (All); ⌃1 drafts; ⌃2 published; ⌃3 faves;
-      ⌃4…9 each connected account
-- [ ] ⌘1 focus sidebar (as-is); ⌘⌥1 All Posts; ⌘⌥2 Published; ⌘⌥3 Drafts; ⌘⌥4 Faves
+- [x] ⇥/⇧⇥ moves focus between columns again (handled explicitly)
+- [x] ⌘R reply to selected post
+- [x] ⌘←/⌘→ move focus between columns (inactive while writing, so the
+      editor keeps caret navigation — flag if you want it anyway)
+- [x] ⌘E edit selected post
+- [x] ⌃0 clear filters (All); ⌃1 drafts; ⌃2 published; ⌃3 faves;
+      ⌃4…9 each connected account (sidebar selection, in account order)
+- [x] ⌘1 focus sidebar (as-is); ⌘⌥1 All Posts; ⌘⌥2 Published; ⌘⌥3 Drafts; ⌘⌥4 Faves
 
 Post show column
-- [ ] No header before content; more blank space above content
-- [ ] Whitespace instead of separator lines
-- [ ] "Written" → "Created"
-- [ ] Snapshot the replied-to post's data in frontmatter when it's someone else's
-      upstream post; render a visual preview of it (in show, and above the reply form)
+- [x] No header before content; more blank space above content
+- [x] Whitespace instead of separator lines
+- [x] "Written" → "Created"
+- [x] Snapshot the replied-to post's data in frontmatter (`in_reply_to_snapshot`:
+      author, text, fetched_at); preview card in show view and above the reply form
 
 Edit
-- [ ] Edit an already-published post upstream where the site allows it
-      (Mastodon yes; Bluesky doesn't support edits — record divergence instead)
-- [ ] Continue a thread of an upstream post/thread
+- [x] Edit an already-published post upstream where the site allows it
+      ("Update Copies": Mastodon edits via PUT; Bluesky/Threads record the live
+      text as per-copy divergence instead)
+- [x] Continue a thread of an upstream post/thread (paste its URL as the reply
+      target; Bluesky mid-thread replies keep the proper thread root)
 
 ## Milestone 4 — More content types
 

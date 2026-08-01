@@ -4,6 +4,19 @@ All notable changes to Outbox are documented here.
 
 ## Unreleased
 
+- Add Tools settings tab: import your published posts from Mastodon/Bluesky
+  (smart merge by content, dupes kept for review), and a Photos-style de-duper
+  that only merges with per-group confirmation.
+- Snapshot the upstream post a reply targets into `in_reply_to_snapshot`
+  frontmatter, with a quoted preview card in the show view and reply form.
+- "Update Copies" pushes edits of published posts to networks that allow it
+  (Mastodon); networks that don't record their live text as per-copy divergence.
+- Display settings: hide avatars in post rows, date format choice, post content
+  size, Open in Finder for the archive folder.
+- Keyboard: ⇥ between columns again, ⌘R reply, ⌘E edit, ⌘←/→ column moves,
+  ⌘⌥1–4 sidebar groups, ⌃0–9 filter and account shortcuts.
+- Post show view: content-first layout with whitespace instead of separators.
+
 - Remodel the archive around single Posts: one canonical file per post at
   `YYYY/MM/DD/slug-N.md`, with network copies recorded in a `syndication`
   frontmatter list and pending destinations in `targets`. Failed targets stay
