@@ -157,6 +157,25 @@ Edit
 - [x] Continue a thread of an upstream post/thread (paste its URL as the reply
       target; Bluesky mid-thread replies keep the proper thread root)
 
+## Milestone 3.8 — Media and Threads (done 2026-08-01)
+
+- [x] Attachments with alt text: picker in the composer, thumbnails, per-file alt
+      editing, remove; `media:` frontmatter; files stored beside the post
+      (`01-slug-1.jpg`); rendered in the show view with their alt text
+- [x] Mastodon media upload (`POST /api/v2/media` multipart → `media_ids`)
+- [x] Bluesky media upload (`uploadBlob` → `app.bsky.embed.images` with alt)
+- [x] Threads adapter for real: Graph API container + publish, reply_to_id,
+      permalink lookup, OAuth with long-lived token exchange
+- [x] Autolinked URLs in the show view; full post text in list rows
+
+Threads caveats worth knowing
+- Its API takes media only from a **public URL**, never an upload, so posts with
+  attachments are skipped (with a reason) rather than silently losing images.
+  Fix would need Outbox to host media somewhere reachable.
+- No dynamic app registration: you paste a client ID/secret from a Meta app.
+- Long-lived tokens expire in ~60 days; refresh (`th_refresh_token`) isn't wired up.
+- The API can't edit published posts, so edits record divergence instead.
+
 ## Milestone 4 — More content types
 
 - [ ] Media attachments with alt text (next up). Design:

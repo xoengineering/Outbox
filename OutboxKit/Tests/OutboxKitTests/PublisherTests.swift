@@ -71,7 +71,11 @@ import Testing
   }
 
   @Test func skippedTargetStaysPending() async throws {
-    let publisher = makePublisher(adapters: [.threads: ThreadsAdapter()])
+    let skipping = StubAdapter(
+      network: .threads,
+      result: .success(.skipped(reason: "Not sent for some reason."))
+    )
+    let publisher = makePublisher(adapters: [.threads: skipping])
     let threadsTarget = Publisher.Target(
       account: Account(
         handle: "@veganstraightedge",

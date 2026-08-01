@@ -4,6 +4,14 @@ All notable changes to Outbox are documented here.
 
 ## Unreleased
 
+- Add media attachments with alt text: pick files in the composer, edit alt text,
+  remove them, and see them rendered in the post view. Files live beside the post
+  in its day folder and upload to Mastodon and Bluesky.
+- Make the Threads adapter real: Graph API two-step publishing, replies,
+  permalink lookup, and OAuth using a Meta app's credentials. Posts with
+  attachments are skipped, since the Threads API only accepts media by public URL.
+- Autolink URLs in the post view; show full post text in list rows.
+
 - Request `read:statuses` and `read:search` in the Mastodon OAuth scopes, so
   importing and reply resolution work; add a Reconnect button for accounts
   authorized before those scopes existed.

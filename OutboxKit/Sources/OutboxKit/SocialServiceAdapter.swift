@@ -36,6 +36,7 @@ public struct OutgoingPost: Equatable, Sendable {
 public enum ResolvedReply: Equatable, Sendable {
   case bluesky(parent: RecordRef, root: RecordRef)
   case mastodon(statusID: String)
+  case threads(parentID: String)
 }
 
 /// An atproto strong record reference.

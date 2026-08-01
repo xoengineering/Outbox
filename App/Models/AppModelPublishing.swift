@@ -232,8 +232,14 @@ extension AppModel {
     }
   }
 
+  /// Which network a pasted post URL belongs to.
+  ///
+  /// Mastodon is the fallback, since any fediverse host can serve a status.
   private func inferredNetwork(of url: URL) -> Network {
-    url.host()?.contains("bsky.app") == true ? .bluesky : .mastodon
+    let host = url.host() ?? ""
+    if host.contains("bsky.app") { return .bluesky }
+    if host.contains("threads.net") || host.contains("threads.com") { return .threads }
+    return .mastodon
   }
 
   private func credential(for account: Account) -> Credential {
