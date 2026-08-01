@@ -139,7 +139,8 @@ Keyboard
       editor keeps caret navigation — flag if you want it anyway)
 - [x] ⌘E edit selected post
 - [x] ⌃0 clear filters (All); ⌃1 drafts; ⌃2 published; ⌃3 faves;
-      ⌃4…9 each connected account (sidebar selection, in account order)
+      ⌃4…9 toggle the network filter pills (pill order: ⌃4 Bluesky,
+      ⌃5 Mastodon, ⌃6 Threads)
 - [x] ⌘1 focus sidebar (as-is); ⌘⌥1 All Posts; ⌘⌥2 Published; ⌘⌥3 Drafts; ⌘⌥4 Faves
 
 Post show column
