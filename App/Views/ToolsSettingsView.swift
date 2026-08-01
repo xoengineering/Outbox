@@ -7,7 +7,9 @@ struct ToolsSettingsView: View {
   @Environment(AppModel.self) private var model
   @State private var dupeGroups: [DupeGroup]?
   @State private var importReports: [UUID: String] = [:]
+  @State private var importingAccountID: UUID?
   @State private var isImporting = false
+  @State private var progressMessage = ""
 
   var body: some View {
     Form {
@@ -20,7 +22,13 @@ struct ToolsSettingsView: View {
               NetworkIconView(network: account.network)
             }
             Spacer()
-            if let report = importReports[account.id] {
+            if importingAccountID == account.id {
+              Text(progressMessage)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+              ProgressView()
+                .controlSize(.small)
+            } else if let report = importReports[account.id] {
               Text(report)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -98,10 +106,18 @@ struct ToolsSettingsView: View {
 
   private func runImport(for accounts: [Account]) async {
     isImporting = true
-    defer { isImporting = false }
+    defer {
+      isImporting = false
+      importingAccountID = nil
+    }
+
     for account in accounts {
+      importingAccountID = account.id
+      progressMessage = "Connecting…"
       do {
-        let report = try await model.importPosts(for: account)
+        let report = try await model.importPosts(for: account) { message in
+          Task { @MainActor in progressMessage = message }
+        }
         importReports[account.id] =
           "\(report.created) new, \(report.merged) merged, \(report.skipped) already tracked"
       } catch {

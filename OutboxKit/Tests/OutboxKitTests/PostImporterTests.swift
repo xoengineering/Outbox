@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import Testing
 
 @testable import OutboxKit
@@ -81,5 +82,37 @@ import Testing
     #expect(posts[0].file.body == "Two by two, hands of blue 🙌🏻🟦\n")
     let copy = try #require(posts[0].file.metadata.syndication.first)
     #expect(copy.remoteURL?.absoluteString.hasSuffix("post/3mrxphbwwuf22") == true)
+    #expect(
+      posts[0].file.metadata.inReplyTo
+        == URL(string: "https://bsky.app/profile/did:plc:someoneelse/post/3parent111"),
+      "the imported post keeps what it replied to"
+    )
+  }
+
+  @Test func reportsProgressWhileImporting() async throws {
+    let account = Account(
+      handle: "@veganstraightedge.com",
+      network: .bluesky,
+      serverURL: URL(string: "https://bsky.social")!
+    )
+    let transport = FixtureTransport(stubs: [
+      .init(fixtureName: "bluesky-create-session.json", statusCode: 200),
+      .init(fixtureName: "bluesky-author-feed.json", statusCode: 200),
+    ])
+    let messages = Mutex<[String]>([])
+    let importer = PostImporter(
+      onProgress: { message in messages.withLock { $0.append(message) } },
+      store: store,
+      transport: transport
+    )
+
+    _ = try await importer.importPosts(
+      for: account,
+      credential: .appPassword(identifier: "veganstraightedge.com", password: "pw")
+    )
+
+    let reported = messages.withLock { $0 }
+    #expect(reported.contains { $0.contains("Fetched") })
+    #expect(reported.contains { $0.contains("Merging") })
   }
 }

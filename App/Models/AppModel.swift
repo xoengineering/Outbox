@@ -95,6 +95,12 @@ import OutboxKit
     if changed { try? accountsRepository.save(accounts) }
   }
 
+  /// Replaces an account's stored credential in place — used when re-authorizing
+  /// an existing connection (e.g. after Outbox asks for broader scopes).
+  func updateCredential(_ credential: Credential, for account: Account) throws {
+    try keychain.save(credential, for: account.id)
+  }
+
   func remove(_ account: Account) {
     try? keychain.delete(for: account.id)
     accounts.removeAll { $0.id == account.id }

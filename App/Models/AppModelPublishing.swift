@@ -134,10 +134,14 @@ extension AppModel {
 
   // MARK: - Tools
 
-  /// Backfills one account's published posts from its network into the archive.
-  func importPosts(for account: Account) async throws -> ImportReport {
+  /// Backfills one account's published posts from its network into the archive,
+  /// reporting progress as it fetches and merges.
+  func importPosts(
+    for account: Account,
+    onProgress: @escaping @Sendable (String) -> Void = { _ in }
+  ) async throws -> ImportReport {
     let report = try await archiveFolder.withAccess { baseURL in
-      try await PostImporter(store: PostStore(baseDirectory: baseURL))
+      try await PostImporter(onProgress: onProgress, store: PostStore(baseDirectory: baseURL))
         .importPosts(for: account, credential: self.credential(for: account))
     }
     await reloadPosts()

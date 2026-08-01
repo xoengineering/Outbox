@@ -11,7 +11,17 @@
         "record": {
           "$type": "app.bsky.feed.post",
           "createdAt": "2026-07-31T19:39:57Z",
-          "text": "Two by two, hands of blue 🙌🏻🟦"
+          "text": "Two by two, hands of blue 🙌🏻🟦",
+          "reply": {
+            "root": {
+              "uri": "at://did:plc:someoneelse/app.bsky.feed.post/3root000",
+              "cid": "bafyreiroot"
+            },
+            "parent": {
+              "uri": "at://did:plc:someoneelse/app.bsky.feed.post/3parent111",
+              "cid": "bafyreiparent"
+            }
+          }
         }
       }
     },

@@ -4,7 +4,9 @@ import Foundation
 /// code-for-token exchange, and credential verification.
 public struct MastodonOAuth: Sendable {
   public static let redirectURI = "outbox://oauth/mastodon"
-  public static let scopes = "read:accounts write:statuses"
+  /// `read:accounts` identifies you, `read:statuses` backfills your posts,
+  /// `read:search` resolves the post a reply targets, `write:statuses` publishes.
+  public static let scopes = "read:accounts read:search read:statuses write:statuses"
 
   private let transport: any HTTPTransport
 

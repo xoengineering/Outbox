@@ -23,6 +23,9 @@ struct AccountsSettingsView: View {
               NetworkIconView(network: account.network)
             }
             Spacer()
+            if account.network == .mastodon {
+              MastodonReconnectButton(account: account)
+            }
             Text(account.network.displayName)
               .font(.caption)
               .foregroundStyle(.secondary)
@@ -36,7 +39,9 @@ struct AccountsSettingsView: View {
           }
         }
       } footer: {
-        Text("Removing an account deletes its credential from your Keychain. Archived post files stay on disk.")
+        Text(
+          "Removing an account deletes its credential from your Keychain. Archived post files stay on disk. "
+            + "Reconnect a Mastodon account if it was authorized before Outbox asked for its current permissions.")
       }
 
       Section("Add Account") {
