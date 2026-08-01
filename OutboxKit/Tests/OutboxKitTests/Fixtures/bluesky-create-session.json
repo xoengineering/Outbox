@@ -1,7 +1,7 @@
 {
   "did": "did:plc:abc123xyz456",
   "handle": "veganstraightedge.com",
-  "email": "veganstraightedge@gmail.com",
+  "email": "someone@example.com",
   "accessJwt": "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJFUzI1NksifQ.access.fake",
   "refreshJwt": "eyJ0eXAiOiJyZWZyZXNoK2p3dCIsImFsZyI6IkVTMjU2SyJ9.refresh.fake",
   "active": true
