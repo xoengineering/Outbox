@@ -118,6 +118,41 @@ Decisions I made unilaterally to keep moving — flag anything you want changed.
 - [ ] Import tool: pull already-published posts from sites into the archive
 - [ ] De-dupe tool: find same-content posts across sites and merge into one Post
 
+## Milestone 3.6 — Shane's punch list (2026-07-31)
+
+Settings
+- [ ] Toggle: show/hide avatars in post row footers (all-on is a bit NASCAR)
+- [ ] "Open folder in Finder" button for the archive folder
+- [ ] Date format choice: `Sep 18, 1979` / `1979-09-18` / `09/18/1979`
+- [ ] Post content size for the detail column (not the list): xs s m l xl
+
+Tools
+- [ ] Import all my posts from signed-in sites — all sites or one at a time.
+      Collisions: smart merge; when in doubt keep dupes and log for manual review
+- [ ] De-duper: used by import, also manually invocable. Photos.app-style list of
+      dupe candidates, yes/no each, then merge
+
+Keyboard
+- [ ] Fix: ⇥ isn't moving focus between columns anymore
+- [ ] ⌘R reply to selected post
+- [ ] ⌘←/⌘→ move focus between columns
+- [ ] ⌘E edit selected post
+- [ ] ⌃0 clear filters (All); ⌃1 drafts; ⌃2 published; ⌃3 faves;
+      ⌃4…9 each connected account
+- [ ] ⌘1 focus sidebar (as-is); ⌘⌥1 All Posts; ⌘⌥2 Published; ⌘⌥3 Drafts; ⌘⌥4 Faves
+
+Post show column
+- [ ] No header before content; more blank space above content
+- [ ] Whitespace instead of separator lines
+- [ ] "Written" → "Created"
+- [ ] Snapshot the replied-to post's data in frontmatter when it's someone else's
+      upstream post; render a visual preview of it (in show, and above the reply form)
+
+Edit
+- [ ] Edit an already-published post upstream where the site allows it
+      (Mastodon yes; Bluesky doesn't support edits — record divergence instead)
+- [ ] Continue a thread of an upstream post/thread
+
 ## Milestone 4 — More content types
 
 - [ ] Media attachments with alt text (next up). Design:
