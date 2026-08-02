@@ -17,8 +17,8 @@ Decisions made unilaterally to keep moving — flag anything you want changed.
 1. **Mastodon app website** is `https://xo.engineering`, inferred from the bundle
    ID `engineering.xo.Outbox`. Confirm the domain is right.
 2. **Bluesky auth uses app passwords**, not full atproto OAuth (PKCE + DPoP + PAR
-   + hosted client metadata). You called this a fair deferral; revisit when the
-   app has a public home for its client metadata JSON.
+   - hosted client metadata). You called this a fair deferral; revisit when the
+     app has a public home for its client metadata JSON.
 3. **"Private" status**: drafts vs published is derived from whether any copies
    exist. Is "private" a visibility value (Mastodon private/unlisted posts) or a
    local-only "never publish" flag? Nothing implements it yet either way.
@@ -179,13 +179,12 @@ Decisions made unilaterally to keep moving — flag anything you want changed.
 ### Threading
 
 - [ ] Group linked posts into a visible thread, Reddit-style:
-      ```
-      Post 1
-        Post 2, in reply to Post 1
-        Post 3, in reply to Post 2
-        Post 4, in reply to Post 3
-      Post 5, unrelated
-      ```
+      `     Post 1
+      Post 2, in reply to Post 1
+      Post 3, in reply to Post 2
+      Post 4, in reply to Post 3
+    Post 5, unrelated
+    `
 - [ ] Open question: what happens to posts that fall chronologically between
       members of a thread? Does the thread hoist them out of the timeline, or
       does it anchor at its first post and pull later replies up to it?
@@ -260,9 +259,9 @@ Bigger ideas, not scheduled.
     Today, I met Shane^[shane].
 
     ^[shane]: Mastodon: @veganstraightedge@ruby.social,
-              Bluesky: @veganstraightedge.com,
-              Threads: @veganstraightedge,
-              Website: https://veganstraightedge.com
+    Bluesky: @veganstraightedge.com,
+    Threads: @veganstraightedge,
+    Website: https://veganstraightedge.com
     ```
   - Or a Markdown link whose title carries the handles, extracted per network on
     syndication and rendered as inline icons locally
