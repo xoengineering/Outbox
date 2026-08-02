@@ -5,8 +5,9 @@ import PackageDescription
 let package = Package(
   name: "OutboxKit",
   platforms: [
-    .iOS("26.6"),
-    .macOS("26.6"),
+    // Raise to 26.6 once Xcode ships a 26.6 SDK; 26.5 is the current ceiling.
+    .iOS("26.5"),
+    .macOS("26.5"),
   ],
   products: [
     .library(

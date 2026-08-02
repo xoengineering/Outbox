@@ -2,9 +2,11 @@ name: Outbox
 options:
   bundleIdPrefix: engineering.xo
   createIntermediateGroups: true
+  # Capped by the SDK Xcode ships, not by the OS you're running.
+  # Xcode 26.6 still carries the 26.5 SDK, which supports targets up to 26.5.99.
   deploymentTarget:
-    iOS: "26.6"
-    macOS: "26.6"
+    iOS: "26.5"
+    macOS: "26.5"
 packages:
   OutboxKit:
     path: OutboxKit

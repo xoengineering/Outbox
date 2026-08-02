@@ -4,6 +4,9 @@ All notable changes to Outbox are documented here.
 
 ## Unreleased
 
+- Keep deployment targets at 26.5: Xcode 26.6 ships the 26.5 SDK, which supports
+  targets only up to 26.5.99, so 26.6 warned in both targets and bought nothing.
+
 - Lint is enforcing, not advisory: `swift format lint` and `swiftlint` both run
   `--strict`, so findings fail `script/lint` and CI instead of scrolling past.
 - Enable a curated set of SwiftLint opt-in rules; let swift-format own line width.
