@@ -119,6 +119,14 @@ Decisions made unilaterally to keep moving — flag anything you want changed.
 
 ## Next
 
+### Bugs
+
+- [ ] Newly picked attachments show a placeholder instead of a thumbnail in the
+      composer. Likely cause: the preview points at the picked file's original
+      URL, but its security scope is released as soon as the import callback
+      returns, so `AsyncImage` can't read it. Fix by previewing the bytes we
+      already hold in memory rather than the URL
+
 ### Housekeeping
 
 - [ ] Raise deployment targets to 26.6 **once Xcode ships a 26.6 SDK**. Tried it
@@ -141,6 +149,47 @@ Decisions made unilaterally to keep moving — flag anything you want changed.
       reconnect rather than showing a raw HTTP error
 - [ ] iCloud Drive-safe file writing (coordinate if the archive lives in iCloud)
 - [ ] Watch the archive folder for external edits and reload
+
+### Posts column
+
+- [ ] Double the vertical padding inside a post row
+- [ ] Restack the row: content, then timestamp on its own line, then the
+      Draft pill and social icons (timestamp moves from trailing to leading)
+
+### Local files
+
+- [ ] Longer slugs in file names
+
+### Settings
+
+- [ ] Only show a Mastodon account's Reconnect button when it actually needs
+      reconnecting — its presence reads as "you should click this"
+- [ ] Promote Display to its own Settings tab, out of General
+- [ ] Show a live example post in Display that reacts to each setting as it changes
+- [ ] Content size setting for the posts column, alongside the detail column's
+- [ ] Font choice for post content in the detail view: New York or SF (default SF)
+
+### Tools
+
+- [ ] Show "Last imported at…" per account for imports that have run
+- [ ] Stop button for a running import
+- [ ] Move both tools out of Settings into their own window, with a Tools menu
+      (Tools → Import from Sites, Tools → Find Duplicates)
+
+### Threading
+
+- [ ] Group linked posts into a visible thread, Reddit-style:
+      ```
+      Post 1
+        Post 2, in reply to Post 1
+        Post 3, in reply to Post 2
+        Post 4, in reply to Post 3
+      Post 5, unrelated
+      ```
+- [ ] Open question: what happens to posts that fall chronologically between
+      members of a thread? Does the thread hoist them out of the timeline, or
+      does it anchor at its first post and pull later replies up to it?
+- [ ] Make it a setting: Thread posts (default) / flat chronological list
 
 ### More content types
 
@@ -169,6 +218,62 @@ Decisions made unilaterally to keep moving — flag anything you want changed.
 - [ ] Threads needs Meta app review before anyone but you can use it
 
 ---
+
+## Future features
+
+Bigger ideas, not scheduled.
+
+### Lists
+
+- [ ] Lists, in the playlist/album sense — entirely local, never pushed upstream
+- [ ] A list is global or scoped to one account
+- [ ] Manually add a post to any list; a post belongs to zero, one, or many
+- [ ] Smart lists: auto-populated by a query builder, iTunes-style, over the
+      schema (dates, account, hashtags, media, URLs, mentions) plus free-form search
+
+### Post detail redesign
+
+- [ ] The view is fine but disjointed. Rethink the whole layout
+- [ ] Keep only light metadata inline (social icons, not account names or URLs),
+      and move the full metadata into a hideable Inspector panel
+- [ ] Make "Edit this Post" visually distinct from "New Post"; pull New Post out
+      of the button group and move it to the leading edge of the title bar
+- [ ] Embed attached media in the detail view
+- [ ] Embed linked media (YouTube URLs, image URLs)
+  - [ ] Cache a personal copy of embedded media (yt-dlp and friends)
+  - [ ] Settings to check for/install Homebrew and yt-dlp, and pick preferred
+        video/audio file types
+
+### Richer composer
+
+- [ ] Live preview of how a post will look on each target network
+- [ ] Manual per-network slicing: one long Mastodon post, the same content as two
+      threaded half-size Bluesky posts, etc.
+
+### Social-media-aware Contacts
+
+- [ ] Started elsewhere; goal is to tag a person once as "Shane" and have each
+      syndicated copy use that person's correct handle for its network
+- [ ] Open question: how to reference people in the stored file. Options:
+  - A human name plus a footnote listing handles per site:
+    ```markdown
+    Today, I met Shane^[shane].
+
+    ^[shane]: Mastodon: @veganstraightedge@ruby.social,
+              Bluesky: @veganstraightedge.com,
+              Threads: @veganstraightedge,
+              Website: https://veganstraightedge.com
+    ```
+  - Or a Markdown link whose title carries the handles, extracted per network on
+    syndication and rendered as inline icons locally
+  - TBD
+
+### Feed Me, See More (separate app)
+
+- An everything reader — all feeds and subscriptions in one place
+- Relates to Outbox only through two-way integration:
+  - From the reader: "Reply to this in Outbox" — feed reading → isolated writing
+  - From Outbox: "Go to post in reader" — isolated writing → full sensory feeds
 
 ## Lessons already paid for
 
