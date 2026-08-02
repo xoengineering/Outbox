@@ -25,6 +25,14 @@ syndicated to each network (POSSE).
 - `script/build [macos|ios]` — build the app
 - `script/lint` / `script/format` — swift format + SwiftLint
 - `script/run` — build and launch the macOS app
+- `script/run ios` — build, install, and launch in the iOS Simulator.
+  Takes an optional simulator name: `script/run ios "iPad Pro 11-inch (M5)"`.
+  Only iOS 26 simulators are eligible, since the deployment target is 26.5
+
+To run on a physical iPhone or iPad, open `Outbox.xcodeproj` in Xcode, pick the
+device as the destination, and Run. The device needs Developer Mode enabled
+(Settings → Privacy & Security → Developer Mode) and `DEVELOPMENT_TEAM` set in
+`Local.xcconfig`.
 
 ## License
 
